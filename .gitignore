@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# IBM Ansible roles
+roles/isam-ansible-roles/

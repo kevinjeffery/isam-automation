@@ -1,0 +1,18 @@
+all:
+  hosts:
+    localhost:
+
+  children:
+    ansible:
+      hosts:
+        localhost:
+  vars:
+    useful_packages:
+    - "open-vm-tools"
+    - "bind-utils"
+    - "unzip"
+    - "net-tools"
+    - "git"
+    - "wget"
+    - "nano"
+    roles_path: "/ansible/roles"

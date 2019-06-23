@@ -1,0 +1,45 @@
+---
+- name: Build out the Ansible Control system for ISAM
+  hosts:
+    ansible
+  tasks:
+  - name: Install some useful packages - RedHat
+    yum:
+      name: "{{useful_packages}}"
+      state: "latest"
+      update_cache: "yes"
+    become: "yes"
+    when: ansible_os_family == "RedHat"
+
+  - name: Install some useful packages - Debian
+    apt:
+      name: "{{useful_packages}}"
+      state: "installed"
+      update_cache: "yes"
+    become: "yes"
+    when: ansible_os_family == "Debian"
+
+  - name: Install pip
+    package:
+      name: 
+      - "python-pip"
+      state: "present"
+    become: "yes"
+
+  - name: Ensure latest version of pip
+    pip:
+      name: "pip"
+      state: "latest"
+    become: "yes"
+
+  - name: Install IBM-Security python library and pre-requisites
+    pip:
+      name:
+      - "requests"
+      - "importlib"
+      - "git+https://github.com/ibm-security/ibmsecurity#egg=ibmsecurity"
+      state: "latest"
+    become: "yes"
+
+  - name: Install/Update ISAM Ansible Roles
+    command: ansible-galaxy install git+https://github.com/ibm-security/isam-ansible-roles.git,master --roles-path {{roles_path|quote}} --force
