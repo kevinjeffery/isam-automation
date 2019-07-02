@@ -1,11 +1,15 @@
 all:
   hosts:
     localhost:
+    datatier.sample.com:
 
   children:
     ansible:
       hosts:
         localhost:
+    ldap:
+      datatier.sample.com:
+
   vars:
     useful_packages:
     - "open-vm-tools"
