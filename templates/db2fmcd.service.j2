@@ -1,0 +1,9 @@
+[Unit]
+Description=DB2V105
+
+[Service]
+ExecStart={{db2_install.file}}/bin/db2fmcd
+Restart=always
+
+[Install]
+WantedBy=default.target
