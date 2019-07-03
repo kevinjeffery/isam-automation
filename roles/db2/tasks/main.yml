@@ -1,0 +1,84 @@
+---
+# roles/db2/tasks/main.yml
+# @version 2.02_2019-07-03
+# @author Kevin Jeffery
+
+  - import_tasks: get_db2.yml
+
+  - import_tasks: packages-redhat.yml
+    when: ansible_os_family == "RedHat"
+
+  - import_tasks: packages-debian.yml
+    when: ansible_os_family == "Debian"
+
+  - import_tasks: db2_instance_users.yml
+    when: db2_instances is defined
+
+  - name: Disabling SELinux
+    selinux: state=disabled
+    when: ansible_os_family == "RedHat"
+
+  - name: Adding entry to /etc/hosts
+    lineinfile:
+      dest: /etc/hosts
+      regexp: "^{{ ansible_default_ipv4.address }} {{ ansible_hostname }}$"
+      line: "{{ ansible_default_ipv4.address }} {{ ansible_hostname }}"
+
+  - name: Running DB2 Pre Requisits Check
+    command: "{{db2_install.dest}}/{{db2_install.creates}}/db2prereqcheck -i -s"
+    register: precheck
+    failed_when: "'failed' in precheck.stderr"
+    changed_when: False 
+
+  - name: Parse response file
+    template: 
+      src: "../templates/db2server.rsp.j2"
+      dest: "/tmp/db2server.rsp"
+
+  - name: Installing DB2
+    command: "{{db2_install.dest}}/{db2_install.creates}}/db2setup -r /tmp/db2server.rsp"
+    register: db2_setup
+    args: 
+      creates: "{{db2_install.file}}"
+
+  - name: Setup results
+    debug: 
+      var: db2_setup.stdout_lines
+    when: db2_setup.changed
+
+  - name: Validating the current installation
+    command: "{{db2_install.file}}/install/db2ls"
+    register: db2_val
+    failed_when: db2_install.file not in db2_val.stdout
+    changed_when: False
+
+  - name: Installation results
+    debug: 
+      var: "db2_val.stdout_lines"
+      verbosity: 3
+
+  - name: Get License infomation
+    command: "{{db2_install.file}}/adm/db2licm -l"
+    register: db2licm_out
+    changed_when: False
+    when: db2_license.enabled == "true"
+
+  - name: Add DB2 License
+    command: "{{db2_install.file}}/adm/db2licm -a {{db2_license.dest}}/{{db2_license.file}}"
+    when: db2_license.enabled == "true" and (db2licm_out.stdout is search('License type:.*Trial') or db2licm_out.stdout is search('Expiry date:.*Expired'))
+
+  - name: Add DB2 High Capacity
+    command: "{{db2_install.file}}/adm/db2licm -a {{db2_highcapacity.dest}}/{{db2_highcapacity.file}}"
+    when: db2_highcapacity.enabled == "true" and (db2licm_out.stdout is search('License type:.*Trial') or db2licm_out.stdout is search('Expiry date:.*Expired'))
+
+  - name: Deploy DB2 Service file
+    template:
+      src: "../templates/db2fmcd.service.j2"
+      dest: "/etc/systemd/system/db2fmcd.service"
+      force: yes
+
+  - name: Enable DB2 FMC Service
+    service:
+      name: db2fmcd.service
+      enabled: yes
+      state: started

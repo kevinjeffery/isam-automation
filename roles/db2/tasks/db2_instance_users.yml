@@ -1,0 +1,43 @@
+---
+# As mentioned by IBM if you set password,uid,gid,group_name 
+# If you provide at least user,password and group_name DB2 setup will create those users
+# TODO: Use the new block feature since `when` clause is equal on all tasks
+  
+#- name: Creating DB2 Fenced Groups
+#  group:
+#    name: "{{item.fenced_group_name}}"
+#    gid: "{{ item.fenced_gid | default(omit) }}"
+#    state: present
+#  with_items: "{{ db2_instances }}"
+#  loop_control:
+#    label: "{{item.fenced_group_name}}"
+#- name: Creating DB2 Instance Groups
+#  group:
+#    name: "{{item.group_name}}"
+#    gid: "{{ item.gid | default(omit) }}"
+#    state: present
+#  with_items: "{{ db2_instances }}"
+#  loop_control:
+#    label: "{{item.group_name}}"
+- name: Creating DB2 Instance Users
+  user:
+    name: "{{item.name}}"
+    group: "{{item.group_name}}"
+    home: "{{ item.home_directory | default(omit) }}"
+    uid: "{{ item.uid | default(omit) }}"
+    createhome: "{{ item.createhome | default(true) }}"
+    password: "{{ item.password | default(omit) }}"
+  with_items: "{{ db2_instances }}"
+  loop_control:
+    label: "{{item.name}}"
+- name: Creating DB2 Fenced Users
+  user:
+    name: "{{item.fenced_username}}"
+    group: "{{item.fenced_group_name}}"
+    home: "{{ item.fenced_home_directory | default(omit) }}"
+    uid: "{{ item.fenced_uid | default(omit) }}"
+    createhome: "{{ item.createhome | default(true) }}"
+    password: "{{ item.fenced_password | default(omit) }}"
+  with_items: "{{ db2_instances }}"
+  loop_control:
+    label: "{{item.fenced_username}}"

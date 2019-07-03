@@ -1,13 +1,13 @@
 ** templates/db2server.rsp.j2
-** @version 2.01_2019-06-30
+** @version 2.02_2019-07-03
 ** @author Kevin Jeffery
 ** General Options
 PROD                      = {{db2_install.prod}}
 FILE                      = {{db2_install.file}}
 LIC_AGREEMENT             = {{db2_install.lic_agreement}}
 INSTALL_TYPE              = {{db2_install.install_type}}
-{%if db2_components is defined %}
-{%for comp in db2_components %}
+{%if db2_install.components is defined %}
+{%for comp in db2_install.components %}
 COMP                      = {{comp.name}}
 {%endfor %}
 {%endif %}
@@ -33,7 +33,7 @@ COMP                      = {{comp.name}}
 {%if db2_instances is defined %}
 {%for inst in db2_instances %}
 
-{%if db2_create_instances == true %}
+{%if db2_install.create_instances == true %}
 ** Instance Creation Settings
 ** --------------------------
 INSTANCE                  = {{inst.instance}}
@@ -61,10 +61,10 @@ INSTANCE                  = {{inst.instance}}
 {% endfor %}
 {% endif %}
 
-{%if global_params is defined %}
+{%if db2_install.global_params is defined %}
 ** Global Profile Registry Settings
 ** --------------------------------
-{% for key, value in global_params.iteritems() %}
+{% for key, value in db2_install.global_params.iteritems() %}
 {{ key | upper}}             = {{ value }}
 {% endfor %}
 {% endif %}
