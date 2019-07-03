@@ -1,0 +1,102 @@
+---
+# roles/setup/tasks/main.yml
+# @version 2.02_2019-06-30
+# @author Kevin Jeffery
+
+- name: Install useful packages
+  package:
+    name: "{{item}}"
+  with_items: "{{useful_packages}}"
+
+- name: Create ibm Directory
+  file:
+    path: /opt/ibm
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Create IBM Symlink
+  file:
+    src: /opt/ibm
+    dest: /opt/IBM
+    state: link
+
+- name: Create the Software repository
+  file:
+    path: "{{software_dest_dir}}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  when: software_dest_dir is defined
+
+- name: Creating DB2 Fenced Groups
+  group:
+    name: "{{item.fenced_group_name}}"
+    gid: "{{ item.fenced_gid | default(omit) }}"
+    state: present
+  with_items: "{{ db2_instances }}"
+  loop_control:
+    label: "{{item.fenced_group_name}}"
+  when: db2_instances is defined
+
+- name: Creating DB2 Instance Groups
+  group:
+    name: "{{item.group_name}}"
+    gid: "{{ item.gid | default(omit) }}"
+    state: present
+  with_items: "{{ db2_instances }}"
+  loop_control:
+    label: "{{item.group_name}}"
+  when: db2_instances is defined
+
+- name: Creating TDS Instance Groups
+  group:
+    name: "{{item.group_name}}"
+    gid: "{{ item.gid | default(omit) }}"
+    state: present
+  with_items: "{{ tds_instances }}"
+  loop_control:
+    label: "{{item.group_name}}"
+  when: tds_instances is defined
+
+- name: Create the ISAM LDAP Data Directory
+  file:
+    path: "{{isamldap_instance_home}}"
+    state: directory
+    mode: 0770
+    group: idsldap
+  when: isamldap_instance_home is defined
+
+- name: Create the ISIM LDAP Data Directory
+  file:
+    path: "{{isimldap_instance_home}}"
+    state: directory
+    mode: 0770
+    group: idsldap
+  when: isimldap_instance_home is defined
+
+- name: Create the ISAM DB2 Data Directory
+  file:
+    path: "{{isamdb_path}}"
+    state: directory
+    mode: 0770
+    group: db2admin
+  when: isamdb_path is defined
+
+- name: Create the ISIM DB2 Data Directory
+  file:
+    path: "{{isimdb_path}}"
+    state: directory
+    mode: 0770
+    group: db2admin
+  when: isimdb_path is defined
+
+- name: Create the IGI DB2 Data Directory
+  file:
+    path: "{{igidb_path}}"
+    state: directory
+    mode: 0770
+    group: db2admin
+  when: igidb_path is defined

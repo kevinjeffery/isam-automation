@@ -1,0 +1,9 @@
+---
+# roles/setup/defaults/main.yml
+# @version 2.00_2019-06-30
+# @author Kevin Jeffery
+tds_instance_pwd: "Passw0rd"
+db2_instance_pwd: "Passw0rd"
+
+useful_packages:
+- "unzip"
