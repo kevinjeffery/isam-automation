@@ -1,0 +1,25 @@
+---
+# roles/gskit/defaults/main.yml
+# @version 1.01_2019-07-02
+# @author Kevin Jeffery
+#
+
+# The following can be overridden with group or host variables
+gskit_install_version:  "8.0.50.89"
+gskit_install_suffix: "FP0089"
+#
+
+gskit_install:
+  version: "{{gskit_install_version}}"
+  suffix: "{{gskit_install_suffix}}"
+  location: "{{software_src_dir | default('/ansible/software')}}"
+  dest: "{{software_dest_dir | default('/appdata/software')}}"
+  archive: "{{gskit_install_version}}-ISS-GSKIT-LinuxX64-{{gskit_install_suffix}}.tar.gz"
+  basename: "{{gskit_install_version}}-ISS-GSKIT-LinuxX64-{{gskit_install_suffix}}"
+  gskit32:
+    - name: "gskcrypt32-{{gskit_install_version}}.linux.x86.rpm"
+    - name: "gskssl32-{{gskit_install_version}}.linux.x86.rpm"
+  gskit64:
+    - name: "gskcrypt64-{{gskit_install_version}}.linux.x86_64.rpm"
+    - name: "gskssl64-{{gskit_install_version}}.linux.x86_64.rpm"
+

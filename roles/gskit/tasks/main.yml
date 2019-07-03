@@ -1,0 +1,32 @@
+---
+# roles/gskit/tasks/main.yml
+# @version v2.03_2019-07-02
+# @author Kevin Jeffery
+
+# Install the system GSKit
+- name: Stage the GSKit archive
+  copy:
+    src: "{{gskit_install.location}}/{{gskit_install.archive}}"
+    dest: "{{gskit_install.dest}}/{{gskit_install.archive}}"
+  
+- name: Decompressing GSKit Package
+  unarchive:
+    src: "{{gskit_install.dest}}/{{gskit_install.archive}}"
+    dest: "{{gskit_install.dest}}"
+    remote_src: yes
+    creates: "{{gskit_install.dest}}/{{gskit_install.basename}}"
+
+- name: Install 32 bit packages
+  package:
+    name: "{{gskit_install.dest}}/{{gskit_install.basename}}/32/{{item.name}}"
+  with_items: "{{gskit_install.gskit32}}"
+  loop_control:
+    label: "{{item.name}}"
+
+- name: Install 64 bit packages
+  package:
+    name: "{{gskit_install.dest}}/{{gskit_install.basename}}/64/{{item.name}}"
+  with_items: "{{gskit_install.gskit64}}"
+  loop_control:
+    label: "{{item.name}}"
+
