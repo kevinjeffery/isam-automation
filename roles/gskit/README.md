@@ -6,3 +6,7 @@ The gskit role automates 4 tasks:
 - Extract the archive.
 - Install the 64 bit components.
 - Install the 32 bit components.
+
+Override these two variables using group or host settings for the current gskit fixpack version:
+- gskit_install_version:  "8.0.50.89"
+- gskit_install_suffix: "FP0089"
