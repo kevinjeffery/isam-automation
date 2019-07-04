@@ -5,7 +5,8 @@
 # The following can be overridden with group or host variables
 tds_install_file: "{{ldap_home | default('/opt/ibm/ldap/V6.4')}}"
 tds_install_imagename: "sds64-linux-x86-64.iso"
-tds_install_url: ""
+tds_install_iso_url: ""
+tds_install_fixpack_url: ""
 tds_install_checksum: 552a7d027826138af844b70ebae998fe86b364d0"
 tds_install_fixpack_version: "6.4.0.16"
 tds_install_fixpack_suffix: "IF0016"
@@ -15,7 +16,8 @@ tds_install_db2_version: "10.5.0.9"
 
 tds_install:
   location: "{{software_src_dir | default('/ansible/software')}}"
-  url: "{{tds_install_url}}"
+  iso_url: "{{tds_install_iso_url}}"
+  fixpack_url: "{{tds_install_fixpack_url}}"
   dest: "{{software_dest_dir | default('/appdata/software')}}"
   imagename: "{{tds_install_imagename}}"
   checksum: "{{tds_install_checksum}}"

@@ -24,24 +24,33 @@
 
 - name: Download the  ISO Image
   get_url:
-    url: "{{tds_install.url}}"
+    url: "{{tds_install.iso_url}}"
     dest: "{{tds_install.dest}}/{{tds_install.imagename}}"
     headers: "{{tds_download_headers | default(omit)}}"
   become: True
-  when: tds_install.url != ""
+  when: tds_install.iso_url != ""
 
 - name: Stage the ISO Image
   copy:
     src: "{{tds_install.location}}/{{tds_install.imagename}}"
     dest: "{{tds_install.dest}}/{{tds_install.imagename}}"
   become: True
-  when: tds_install.url == ""
+  when: tds_install.iso_url == ""
 
-- name: Deploy the Fixpack
+- name: Download the  Fixpack
+  get_url:
+    url: "{{tds_install.fixpack_url}}"
+    dest: "{{tds_install.dest}}/{{tds_install.imagename}}"
+    headers: "{{tds_download_headers | default(omit)}}"
+  become: True
+  when: tds_install.fixpack_url != ""
+
+- name: Stage the Fixpack
   copy:
     src: "{{tds_install.location}}/{{tds_install.fixpack_basename}}.tar.gz"
     dest: "{{tds_install.dest}}/{{tds_install.fixpack_basename}}.tar.gz"
   become: True
+  when: tds_install.fixpack_url == ""
 
 - name: Unarchive fixpack
   unarchive:
