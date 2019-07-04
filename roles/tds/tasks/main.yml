@@ -1,0 +1,113 @@
+---
+# roles/tds/tasks/main.yml
+# @version 2.02_2019-07-04
+# @author Kevin Jeffery
+# TDS Installation
+
+# Create the instance users
+- include_tasks: tds_instance_users.yml
+
+# Disable DB2 Prerequisite check for DB2 v11.1
+- name: Create TDS Install directory
+  file:
+    path: "{{tds_install.file}}/install"
+    state: "directory"
+  become: True
+  when: tds_install.current_db2_version > "11.1.0.0"
+
+- name: Disable DB2 Prerequisite check
+  copy:
+    dest: "{{tds_install.file}}/install/IBMLDAP_INSTALL_SKIPDB2REQ"
+    content: ""
+  become: True
+  when: tds_install.current_db2_version > "11.1.0.0"
+
+- name: Download the  ISO Image
+  get_url:
+    url: "{{tds_install.url}}"
+    dest: "{{tds_install.dest}}/{{tds_install.imagename}}"
+  become: True
+  when: tds_install.url != ""
+
+- name: Stage the ISO Image
+  copy:
+    src: "{{tds_install.location}}/{{tds_install.imagename}}"
+    dest: "{{tds_install.dest}}/{{tds_install.imagename}}"
+  become: True
+  when: tds_install.url == ""
+
+- name: Deploy the Fixpack
+  copy:
+    src: "{{tds_install.location}}/{{tds_install.fixpack_basename}}.tar.gz"
+    dest: "{{tds_install.dest}}/{{tds_install.fixpack_basename}}.tar.gz"
+  become: True
+
+- name: Unarchive fixpack
+  unarchive:
+    src: "{{tds_install.dest}}/{{tds_install.fixpack_basename}}.tar.gz"
+    dest: "{{tds_install.dest}}"
+    remote_src: yes
+    creates: "{{tds_install.dest}}/{tds_install.fixpack_basename}}"
+  become: True
+
+- name: Mount the ISO Image {{tds_install.dest}}/{{tds_install.imagename}}
+  mount: 
+    opts: "loop,ro"
+    src: "{{tds_install.dest}}/{{tds_install.imagename}}"
+    fstype: iso9660
+    path: /mnt/tds
+    state: mounted
+  changed_when: false
+  become: True
+
+- name: TDS License
+  command: "/mnt/tds/license/idsLicense -q"
+  args:
+    creates: "{{tds_install.file}}/license"
+  become: True
+  become_method: sudo
+
+- name: TDS Install
+  command: "rpm --force -ivh /mnt/tds/images/idsldap*"
+  args:
+    creates: "{{tds_install.file}}/sbin"
+    warn: False
+  become: True
+  register: install_tds
+
+- name: Get TDS Version
+  shell: "{{tds_install.file}}/bin/idsversion 2>&1|grep -e \"^64-bit TDS server version:\"|cut -d: -f2"
+  become: True
+  register: tds_version
+  changed_when: tds_version.stdout < tds_install.fixpack_version
+
+- name: TDS Installed Version
+  debug: 
+    var: tds_version.stdout
+    verbosity: 3
+
+- name: Update the TDS license
+  command: "{{tds_install.dest}}/{{tds_install.fixpack_basename}}/license/idsLicense -q"
+  become: True
+  when: tds_version.changed
+
+- name: Install the TDS Fixpack
+  command: "{{tds_install.dest}}/{{tds_install.fixpack_basename}}/idsinstall -u -f"
+  become: True
+  when: tds_version.changed
+
+- name: Configure ldapdb.properties
+  template: 
+    src:  templates/ldapdb.properties.j2
+    dest: "{{tds_install.file}}/etc/ldapdb.properties"
+    group: "idsldap"
+    mode: "644"
+  become: True
+
+- name: Un-mount the ISO Image
+  mount: 
+    path: /mnt/tds
+    state: unmounted
+  changed_when: False
+  failed_when: False
+  become: True

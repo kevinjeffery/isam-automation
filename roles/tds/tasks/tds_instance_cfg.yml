@@ -1,0 +1,25 @@
+---
+# roles/tds/tasks/tds_instance_cfg.yml
+# @version 2.00_2019-06-08
+# @author Kevin Jeffery - kjeffery@ca.ibm.com
+
+- name: Update firewalld {{ldap_port | default('389')}}
+  firewalld:
+    port: "{{ldap_port | default('389'}}}/tcp"
+    permanent: True
+    state: enabled
+- name: Update firewalld {{ldap_ssl_port | default('636')}}
+  firewalld:
+    port: "{{ldap_ssl_port | default('636')}}/tcp"
+    permanent: True
+    state: enabled
+- name: Update firewalld {{ldap_admin_port | default('3538')}}
+  firewalld:
+    port: "{{ldap_admin_port | default('3538')}}/tcp"
+    permanent: True
+    state: enabled
+- name: Update firewalld {{ldap_admin_ssl_port | default('3539')}}
+  firewalld:
+    port: "{{ldap_admin_ssl_port | default('3539')}}/tcp"
+    permanent: True
+    state: enabled

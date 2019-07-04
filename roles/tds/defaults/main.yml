@@ -1,0 +1,26 @@
+# roles/tds/defaults/main.yml
+# @version 2.01_2019-07-04
+# @author Kevin Jeffery
+
+# The following can be overridden with group or host variables
+tds_install_file: "{{ldap_home | default('/opt/ibm/ldap/V6.4')}}"
+tds_install_imagename: "sds64-linux-x86-64.iso"
+tds_install_url: ""
+tds_install_checksum: 552a7d027826138af844b70ebae998fe86b364d0"
+tds_install_fixpack_version: "6.4.0.16"
+tds_install_fixpack_suffix: "IF0016"
+tds_install_db2_path: "{{db2_home | default('/opt/ibm/DB2/V10.5')}}"
+tds_install_db2_version: "10.5.0.9"
+#
+
+tds_install:
+  location: "{{software_src_dir | default('/ansible/software')}}"
+  url: "{{tds_install_url}}"
+  dest: "{{software_dest_dir | default('/appdata/software')}}"
+  imagename: "{{tds_install_imagename}}"
+  checksum: "{{tds_install_checksum}}"
+  file: "{{tds_install_file}}"
+  fixpack_version: "{{tds_install_fixpack_version}}"
+  fixpack_basename: "{{tds_install_fixpack_version}}-ISS-ISDS-LinuxX64-{{tds_install_fixpack_suffix}}"
+  current_db2_install_path: "{{tds_install_db2_path}}"
+  current_db2_version: "{{tds_install_db2_version}}"

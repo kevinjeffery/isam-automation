@@ -1,0 +1,17 @@
+---
+# roles/tds/tasks/tds_instance_users.yml
+# @version 2.01_2019-06-30
+# @author Kevin Jeffery
+
+- name: Creating TDS Instance Users
+  user:
+    name: "{{item.name}}"
+    group: "{{item.group_name}}"
+    home: "{{ item.home_directory | default(omit) }}"
+    password: "{{ item.password | default(omit) }}"
+    uid: "{{ item.uid | default(omit) }}"
+    createhome: "{{ item.createhome | default(true) }}"
+  with_items: "{{ tds_instances }}"
+  loop_control:
+    label: "{{item.name}}"
+  
