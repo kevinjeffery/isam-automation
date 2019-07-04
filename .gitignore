@@ -103,8 +103,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# IBM Ansible roles
+# IBM Ansible roles and software
 roles/isam-ansible-roles/
+software/
 
 # Playbook retry files
 *.retry
