@@ -26,6 +26,7 @@
   get_url:
     url: "{{tds_install.url}}"
     dest: "{{tds_install.dest}}/{{tds_install.imagename}}"
+    headers: "{{tds_download_headers | default(omit)}}"
   become: True
   when: tds_install.url != ""
 

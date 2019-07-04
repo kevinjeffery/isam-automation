@@ -8,6 +8,7 @@
   get_url:
     url: "{{gskit_install.url}}"
     dest: "{{gskit_install.dest}}/{{gskit_install.archive}}"
+    headers: "{{gskit_download_headers | default(omit)}}"
   when: gskit_install.url != ""
 
 - name: Stage the GSKit archive

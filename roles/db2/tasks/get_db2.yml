@@ -8,6 +8,7 @@
   get_url:
     url: "{{db2_install.url}}"
     dest: "{{db2_install.dest}}/{{db2_install.archive}}"
+    headers: "{{db2_download_headers | default(omit)}}"
   when: db2_install.url != ""
 
 - name: Stage DB2 Binary
@@ -20,6 +21,7 @@
   get_url:
     url: "{{db2_license.url}}"
     dest: "{{db2_license.dest}}/{{db2_license.archive}}"
+    headers: "{{db2_download_headers | default(omit)}}"
   when: db2_license.enabled == "true" and db2_license.url != ""
 
 - name: Stage DB2 License
@@ -32,6 +34,7 @@
   get_url:
     url: "{{db2_highcapacity.url}}"
     dest: "{{db2_highcapacity.dest}}/{{db2_highcapacity.archive}}"
+    headers: "{{db2_download_headers | default(omit)}}"
   when: db2_highcapacity.enabled == "true" and db2_highcapacity.url != ""
 
 - name: Stage DB2 High volume

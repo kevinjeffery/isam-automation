@@ -6,6 +6,7 @@
   get_url:
     url: "{{javasdk_install.url}}"
     dest: "{{javasdk_install.dest}}/{{javasdk_install.archive}}"
+    headers: "{{javasdk_download_headers | default(omit)}}"
   when: javasdk_install.url != ""
 
 - name: Stage the JAVA SDK Archive
