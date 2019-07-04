@@ -8,7 +8,11 @@ all:
       hosts:
         localhost:
     ldap:
-      datatier.sample.com:
+      hosts:
+        datatier.sample.com:
+    isamldap-servers:
+      hosts:
+        datatier.sample.com:
 
   vars:
     useful_packages:
