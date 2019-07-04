@@ -1,11 +1,11 @@
 ---
 # roles/db2/defaults/main.yml
-# @version 2.03_2019-07-03
+# @version 2.04_2019-07-04
 # @author Kevin Jeffery 
 # Response file keywords: https://www-01.ibm.com/support/knowledgecenter/SSEPGG_10.5.0/com.ibm.db2.luw.qb.server.doc/doc/r0007505.html
 
 # The following can be overridden with group or host variables
-# db2_install_url: ""
+db2_install_url: ""
 db2_install_version: "10.5.0.9"
 db2_install_archive: "v10.5fp9_linuxx64_server_t.tar.gz"
 db2_install_creates: server_t
@@ -36,10 +36,12 @@ db2_install_create_instances: false
 
 # Set to true if you have a DB2 license file
 db2_license_enabled: "false"
+db2_license_url: ""
 db2_license_archive: "DB2_ESE_Restrict_QS_Act_10.5.0.8.zip"
 db2_license_file: "ese_o/db2/license/db2ese_o.lic"
 # Set to "true" for DB2 11.4 if you have the High Capacity license
 db2_highcapacity_enabled: "false"
+db2_highcapacity_url: ""
 db2_highcapacity_archive: "DB2_OHC_Restricted_Activation_11.1.zip"
 db2_highcapacity_file: "hc/db2/license/db2hc.lic"
 #
@@ -47,7 +49,7 @@ db2_highcapacity_file: "hc/db2/license/db2hc.lic"
 db2_install:
   version: "{{db2_install_version}}"
   location: "{{software_src_dir | default('/ansible/software')}}"
-  url: "{{db2_install_url | default(omit)}}"
+  url: "{{db2_install_url}}"
   dest: "{{software_dest_dir | default('/appdata/software')}}"
   archive: "{{db2_install_archive}}"
   creates: "{{db2_install_creates}}"
@@ -57,11 +59,13 @@ db2_install:
   install_type: "CUSTOM"
   components: "{{db2_install_components}}"
   create_instances: "{{db2_install_create_instances}}"
-  global_params: "{{db2_install.global_params | default(omit)}}"
+  global_params: "{{db2_install_global_params | default(omit)}}"
+  packages: "{{db2_install_packages}}"
 
 db2_license:
   enabled: "{{db2_license_enabled}}"
   location: "{{software_src_dir | default('/ansible/software')}}"
+  url: "{{db2_license_url}}"
   dest: "{{software_dest_dir | default('/appdata/software')}}"
   archive: "{{db2_license_archive}}"
   file: "{{db2_license_file}}"
@@ -70,6 +74,7 @@ db2_license:
 db2_highcapacity:
   enabled: "{{db2_highcapacity_enabled}}"
   location: "{{software_src_dir | default('/ansible/software')}}"
-  dest: "{{software_dest_dir}} | default('/appdata/software')}}"
+  url: "{{db2_highcapacity_url}}"
+  dest: "{{software_dest_dir | default('/appdata/software')}}"
   archive: "{{db2_highcapacity_archive}}"
   file: "{{db2_highcapacity_file}}"

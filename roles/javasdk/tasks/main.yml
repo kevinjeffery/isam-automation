@@ -1,11 +1,18 @@
 ---
 # roles/javasdk/tasks/main.yml
-# @version 2.02_2019-07-03
+# @version 2.03_2019-07-04
 # Java SDK Package for DB2 and TDS
+- name: Download the JAVA SDK Archive
+  get_url:
+    url: "{{javasdk_install.url}}"
+    dest: "{{javasdk_install.dest}}/{{javasdk_install.archive}}"
+  when: javasdk_install.url != ""
+
 - name: Stage the JAVA SDK Archive
   copy:
     src: "{{javasdk_install.location}}/{{javasdk_install.archive}}"
-    dest: "{{javasdk_install.dest}}"
+    dest: "{{javasdk_install.dest}}/{{javasdk_install.archive}}"
+  when: javasdk_install.url == ""
 
 - name: Decompressing Java SDK Package
   unarchive:

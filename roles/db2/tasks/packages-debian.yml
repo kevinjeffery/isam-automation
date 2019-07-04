@@ -1,12 +1,12 @@
 ---
 # roles/db2/tasks/packages-debian.yml
-# @version 2.01_2019-06-30
+# @version 2.02_2019-07-04
 # @author Kevin Jeffery
   - name: Adding i386 packages on Apt
     shell: dpkg --add-architecture i386
     
   - name: Installing DB2 pre requisites packages - Debian
-    apt: name="{{ db2_packages }}" state=installed update_cache={{make_cache}}
+    apt: name="{{ db2_install.packages }}" state=installed update_cache={{make_cache}}
 
   - name: Fixing Libpam
     file: path=/lib/libpam.so src=/lib/i386-linux-gnu/libpam.so.0 state=link

@@ -1,18 +1,20 @@
 ---
 # roles/javasdk/defaults/main.yml
-# @version 2.01_2019-07-03
+# @version 2.02_2019-07-04
 # @author Kevin Jeffery
 #
 
 # The following can be overridden with group or host variables
 javasdk_install_version:  "8.0.5.15"
 javasdk_install_suffix: "FP0015"
+javasdk_install_url: ""
 #
 
 javasdk_install:
   version: "{{javasdk_install_version}}}"
   fixpack : "{{javasdk_install_suffix}}"
   location: "{{software_src_dir | default('/ansible/software')}}"
+  url: "{{javasdk_install_url}}"
   dest: "{{software_dest_dir | default('/appdata/software')}}"
-  archive: "{{javasdk_install_version}}-ISS-JAVA-LinuxX64-{{javasdk_install_suffix}.tar"
+  archive: "{{javasdk_install_version}}-ISS-JAVA-LinuxX64-{{javasdk_install_suffix}}.tar"
   basename: "{{javasdk_install_version}}-ISS-JAVA-LinuxX64-{{javasdk_install_suffix}}"

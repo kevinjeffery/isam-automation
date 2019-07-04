@@ -1,32 +1,44 @@
 ---
 # roles/db2/tasks/get_db2.yml
-# @version 2.02_2019-07-03
+# @version 2.03_2019-07-04
 # @author Kevin Jeffery - kjeffery@ca.ibm.com
 #Download a DB2 copy from a custom URL (Could be a http, an ftp whatever.)
 
-- name: Downloading DB2
+- name: Download DB2 Binary
   get_url:
     url: "{{db2_install.url}}"
     dest: "{{db2_install.dest}}/{{db2_install.archive}}"
-  when: db2_install.url is defined
+  when: db2_install.url != ""
 
 - name: Stage DB2 Binary
   copy:
     src: "{{db2_install.location}}/{{db2_install.archive}}"
-    dest: "{{db2_install.dest}}"
-  when: db2_binary.url is not defined
+    dest: "{{db2_install.dest}}/{{db2_install.archive}}"
+  when: db2_install.url == ""
+
+- name: Download DB2 License
+  get_url:
+    url: "{{db2_license.url}}"
+    dest: "{{db2_license.dest}}/{{db2_license.archive}}"
+  when: db2_license.enabled == "true" and db2_license.url != ""
 
 - name: Stage DB2 License
   copy:
     src: "{{db2_license.location}}/{{db2_license.archive}}"
-    dest: "{{db2_license.dest}}"
-  when: db2_license.enabled == "true"
+    dest: "{{db2_license.dest}}/{{db2_license.archive}}"
+  when: db2_license.enabled == "true" and db2_license.url == ""
+
+- name: Download DB2 High volume
+  get_url:
+    url: "{{db2_highcapacity.url}}"
+    dest: "{{db2_highcapacity.dest}}/{{db2_highcapacity.archive}}"
+  when: db2_highcapacity.enabled == "true" and db2_highcapacity.url != ""
 
 - name: Stage DB2 High volume
   copy:
     src: "{{db2_highcapacity.location}}/{{db2_highcapacity.archive}}"
-    dest: "{{db2_highcapacity.dest}}"
-  when: db2_highcapacity.enabled == "true"
+    dest: "{{db2_highcapacity.dest}}/{{db2_highcapacity.archive}}"
+  when: db2_highcapacity.enabled == "true" and db2_highcapacity.url == ""
 
 - name: Decompressing DB2 Server
   unarchive:

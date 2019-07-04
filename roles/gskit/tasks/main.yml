@@ -4,10 +4,17 @@
 # @author Kevin Jeffery
 
 # Install the system GSKit
+- name: Download the GSKit archive
+  get_url:
+    url: "{{gskit_install.url}}"
+    dest: "{{gskit_install.dest}}/{{gskit_install.archive}}"
+  when: gskit_install.url != ""
+
 - name: Stage the GSKit archive
   copy:
     src: "{{gskit_install.location}}/{{gskit_install.archive}}"
     dest: "{{gskit_install.dest}}/{{gskit_install.archive}}"
+  when: gskit_install.url == ""
   
 - name: Decompressing GSKit Package
   unarchive:

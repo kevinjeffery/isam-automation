@@ -1,6 +1,6 @@
 ---
 # roles/db2/tasks/packages-redhat.yml
-# @version 2.01_2019-06-30
+# @version 2.02_2019-07-04
 # @author Kevin Jeffery
   - name: Installing DB2 pre requisites packages - RedHat
-    yum: name="{{db2_packages}}" state=latest update_cache=yes disable_gpg_check=yes
+    yum: name="{{db2_install.packages}}" state=latest update_cache=yes disable_gpg_check=yes
