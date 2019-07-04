@@ -3,21 +3,19 @@
 # @version 2.04_2019-07-04
 # @author Kevin Jeffery
 
-  - name: Install some useful packages - RedHat
-    yum:
-      name: "{{useful_packages}}"
-      state: "latest"
-      update_cache: "yes"
-    become: "yes"
-    when: ansible_os_family == "RedHat"
+- name: Install some useful packages - RedHat
+  yum:
+    name: "{{useful_packages}}"
+    state: "latest"
+    update_cache: "yes"
+  when: ansible_os_family == "RedHat"
 
-  - name: Install some useful packages - Debian
-    apt:
-      name: "{{useful_packages}}"
-      state: "installed"
-      update_cache: "yes"
-    become: "yes"
-    when: ansible_os_family == "Debian"
+- name: Install some useful packages - Debian
+  apt:
+    name: "{{useful_packages}}"
+    state: "installed"
+    update_cache: "yes"
+  when: ansible_os_family == "Debian"
 
 - name: Create ibm Directory
   file:
