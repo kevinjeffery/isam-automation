@@ -2,6 +2,12 @@
 # roles/setup/tasks/main.yml
 # @version 2.04_2019-07-04
 # @author Kevin Jeffery
+- name: Install epel-release - RedHat
+  yum:
+    name: "epel-release"
+    state: "latest"
+    update_cache: "yes"
+  when: ansible_os_family == "RedHat"
 
 - name: Install some useful packages - RedHat
   yum:
