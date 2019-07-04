@@ -10,6 +10,20 @@ all:
     ldap:
       hosts:
         datatier.sample.com:
+      vars:
+        gskit_install_version: "8.0.55.4"
+        gskit_install_suffix: "FP004"
+        javasdk_install_version: "8.0.5.20"
+        javasdk_install_suffix : "FP0020"
+        db2_install_archive: "v11.1.4fp4_linuxx64_server_t.tar.gz"
+        db2_install_version: "11.1.4.4"
+        db2_install_packages:
+        - pam
+        db2_license_enabled: "true"
+        db2_license_archive: "DB2_ESE_Restricted_Activation_11.1.zip"
+        tds_install_fixpack_version: "6.4.0.18"
+        tds_install_fixpack_suffix: "IF0018"
+        tds_install_db2_version: "{{db2_install_version}}"
     isamldap-servers:
       hosts:
         datatier.sample.com:
@@ -24,3 +38,5 @@ all:
     - "wget"
     - "nano"
     roles_path: "/ansible/roles"
+    software_src_dir: /ansible/software
+    software_dest_dir: /appdata/software
