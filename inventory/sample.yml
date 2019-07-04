@@ -24,7 +24,7 @@ all:
         tds_install_fixpack_version: "6.4.0.18"
         tds_install_fixpack_suffix: "IF0018"
         tds_install_db2_version: "{{db2_install_version}}"
-    isamldap-servers:
+    isamldap_servers:
       hosts:
         datatier.sample.com:
 
