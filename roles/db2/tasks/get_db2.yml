@@ -52,7 +52,7 @@
 
 - name: Decompress DB2 License
   unarchive:
-    src: "{{db2_license.archive}}"
+    src: "{{db2_license.dest}}/{{db2_license.archive}}"
     remote_src: "yes"
     dest: "{{db2_license.dest}}"
     creates: "{{db2_license.dest}}/{{db2_license.file}}"
