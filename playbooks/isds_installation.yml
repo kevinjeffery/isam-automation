@@ -1,6 +1,6 @@
 ---
 # isds_installation.yml
-# @version 2.01_2019-06-30
+# @version 2.02_2019-07-05
 # @author Kevin Jeffery
 #
 # Install IBM Directory Server software
@@ -24,7 +24,7 @@
   post_tasks:
   - set_fact:
       rsync_dry_run: "--dry-run"
-    when: ansible_check_mode
+    when: ansible_check_mode | bool
 
 # Sync GSKit and Java SDK to DB2 and TDS
   - name: Sync DB2 GSKit32
