@@ -1,6 +1,6 @@
 ---
 # roles/tds/tasks/tds_instance_users.yml
-# @version 2.01_2019-06-30
+# @version 2.02_2019-07-04
 # @author Kevin Jeffery
 
 - name: Creating TDS Instance Users
@@ -14,4 +14,4 @@
   with_items: "{{ tds_instances }}"
   loop_control:
     label: "{{item.name}}"
-  
+  when: tds_instances is defined

@@ -1,6 +1,6 @@
 ---
 # roles/db2/defaults/main.yml
-# @version 2.04_2019-07-04
+# @version 2.04_2019-07-05
 # @author Kevin Jeffery 
 # Response file keywords: https://www-01.ibm.com/support/knowledgecenter/SSEPGG_10.5.0/com.ibm.db2.luw.qb.server.doc/doc/r0007505.html
 
@@ -12,12 +12,13 @@ db2_install_creates: server_t
 # Packages required for both DB2 v10.5 and DB2 v11.1
 db2_install_packages:
   - pam
+  - pam.i386
+  - ksh
 # Comment lines below for DB2 v11.1 or override with variables
   - libaio
   - compat-libstdc++-33.i686
   - compat-libstdc++-33
   - libstdc++
-  - ksh
 db2_install_file: "{{db2_home|default('/opt/ibm/DB2/V10.5')}}"
 db2_install_components:
   - name: LDAP_EXPLOITATION
@@ -59,7 +60,7 @@ db2_install:
   install_type: "CUSTOM"
   components: "{{db2_install_components}}"
   create_instances: "{{db2_install_create_instances}}"
-  global_params: "{{db2_install_global_params | default(omit)}}"
+  global_params: "{{db2_install_global_params | default('')}}"
   packages: "{{db2_install_packages}}"
 
 db2_license:

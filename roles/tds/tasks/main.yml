@@ -1,6 +1,6 @@
 ---
 # roles/tds/tasks/main.yml
-# @version 2.02_2019-07-04
+# @version 2.03_2019-07-05
 # @author Kevin Jeffery
 # TDS Installation
 
@@ -108,7 +108,7 @@
 
 - name: Configure ldapdb.properties
   template: 
-    src:  templates/ldapdb.properties.j2
+    src:  "../templates/ldapdb.properties.j2"
     dest: "{{tds_install.file}}/etc/ldapdb.properties"
     group: "idsldap"
     mode: "644"

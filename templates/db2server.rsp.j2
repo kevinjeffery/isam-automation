@@ -1,5 +1,5 @@
 ** templates/db2server.rsp.j2
-** @version 2.02_2019-07-03
+** @version 2.02_2019-07-04
 ** @author Kevin Jeffery
 ** General Options
 PROD                      = {{db2_install.prod}}
@@ -61,7 +61,7 @@ INSTANCE                  = {{inst.instance}}
 {% endfor %}
 {% endif %}
 
-{%if db2_install.global_params is defined %}
+{% if db2_install.global_params is defined and db2_install.global_params|length %}
 ** Global Profile Registry Settings
 ** --------------------------------
 {% for key, value in db2_install.global_params.iteritems() %}

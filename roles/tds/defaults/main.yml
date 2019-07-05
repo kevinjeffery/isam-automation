@@ -2,6 +2,15 @@
 # @version 2.01_2019-07-04
 # @author Kevin Jeffery
 
+# Always create the first ISDS Instance User and Group if you want to control gid/uid/home/etc
+tds_instances:
+- name: "idsldap" 
+  group_name: "idsldap"
+  uid: 1420
+  gid: 1420
+  home: "/home/idsldap"
+  password: "{{tds_instance_pwd | password_hash('sha512', 61420 | random(seed=inventory_hostname) | string)}}"
+
 # The following can be overridden with group or host variables
 tds_install_file: "{{ldap_home | default('/opt/ibm/ldap/V6.4')}}"
 tds_install_imagename: "sds64-linux-x86-64.iso"

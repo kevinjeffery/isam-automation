@@ -36,7 +36,7 @@
       dest: "/tmp/db2server.rsp"
 
   - name: Installing DB2
-    command: "{{db2_install.dest}}/{db2_install.creates}}/db2setup -r /tmp/db2server.rsp"
+    command: "{{db2_install.dest}}/{{db2_install.creates}}/db2setup -r /tmp/db2server.rsp"
     register: db2_setup
     args: 
       creates: "{{db2_install.file}}"
