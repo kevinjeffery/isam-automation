@@ -1,0 +1,17 @@
+# Start of service file
+# idsslapd service template 31-JAN-2017
+[Unit]
+Description=IBM Security Directory Server {{isamldap_instance_name}}
+After=local-fs.target network-online.target
+
+[Service]
+Type=forking
+GuessMainPID=no
+PIDFile={{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/tmp/slapd.pid
+ExecStart={{ldap_home}}/sbin/ibmslapd -I {{isamldap_instance_name}} -n
+ExecStop={{ldap_home}}/sbin/ibmslapd -I {{isamldap_instance_name}} -k
+ExecStop=/usr/bin/su -c ". ~{{isamldap_instance_name}}/sqllib/db2profile; db2stop force" -l {{isamldap_instance_name}}
+
+[Install]
+WantedBy=default.target
+# End of service file

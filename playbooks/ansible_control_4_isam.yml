@@ -1,6 +1,6 @@
 ---
 # playbooks/ansible_control_4_isam.yml
-# @version 1.01_2019-07-02
+# @version 1.02_2019-07-05
 # @author Kevin Jeffery
 #
 - name: Build out the Ansible Control system for ISAM
@@ -42,6 +42,28 @@
       - "requests"
       - "importlib"
       - "git+https://github.com/ibm-security/ibmsecurity#egg=ibmsecurity"
+      state: "latest"
+    become: "yes"
+
+  - name: Install python-ldap dependencies - RedHat
+    yum:
+      name: "gcc,python-devel,openldap,openldap-clients,openldap-devel"
+      state: "latest"
+      update_cache: "yes"
+    become: "yes"
+    when: ansible_os_family == "RedHat"
+
+  - name: Install python-ldap dependencies - Debian
+    apt:
+      name: "gcc,python-dev,openldap,openldap-clients,openldap-dev"
+      state: "installed"
+      update_cache: "yes"
+    become: "yes"
+    when: ansible_os_family == "Debian"
+
+  - name: Install the python-ldap library for ISDS configuration
+    pip:
+      name: "python-ldap"
       state: "latest"
     become: "yes"
 

@@ -1,0 +1,21 @@
+---
+# roles/isamldap/tasks/main.yml
+# @version 2.01_2019-07-05
+# @author Kevin Jeffery
+
+# ISAM LDAP Instance Creation
+- include_tasks: isamldap_instance.yml
+
+# ISAM LDAP Instance Configuration
+- include_tasks: isamldap_instance_cfg.yml
+
+- name: Get Config
+  tdsinstance:
+    instance: "{{isamldap_instance_name}}"
+    action: get_config
+  register: get_config
+
+- name: Config info
+  debug: 
+    var: get_config
+    verbosity: 3

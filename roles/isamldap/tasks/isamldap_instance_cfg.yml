@@ -1,0 +1,147 @@
+---
+# roles/isamldap/tasks/isamldap_instance_cfg.yml
+# @version v2.01_2019-07-05
+# @author Kevin Jeffery
+
+# Standard LDAP Instance Settings
+- name: Set Password Encryption
+  ldap_attr:
+    dn: "cn=Configuration"
+    name: "ibm-slapdPwEncryption"
+    values: "ssha512"
+    state: exact
+    server_uri: "ldap://{{isamldap_hostname}}/"
+    bind_dn: "{{ isamldap_admin_id}}"
+    bind_pw: "{{isamldap_admin_pwd}}"
+  delegate_to: localhost
+
+- name: Set Database Connections
+  ldap_attr:
+    dn: "cn=Directory, cn=RDBM Backends, cn=IBM Directory, cn=Schemas, cn=Configuration"
+    name: "ibm-slapdDbConnections"
+    values: "30"
+    state: exact
+    server_uri: "ldap://{{isamldap_hostname}}/"
+    bind_dn: "{{isamldap_admin_id}}"
+    bind_pw: "{{isamldap_admin_pwd}}"
+  delegate_to: localhost
+
+- name: Connection Managment
+  ldap_attr:
+    dn: "cn=Connection Management, cn=Front End, cn=Configuration"
+    name: "{{item.key}}"
+    values: "{{item.value}}"
+    state: exact
+    server_uri: "ldap://{{isamldap_hostname}}/"
+    bind_dn: "{{isamldap_admin_id}}"
+    bind_pw: "{{isamldap_admin_pwd}}"
+  with_dict:
+    ibm-slapdAllowAnon: "false"
+    ibm-slapdAllReapingThreshold: "3"
+    ibm-slapdAnonReapingThreshold: "3"
+    ibm-slapdBoundReapingThreshold: "3"
+    ibm-slapdIdleTimeOut: "1200"
+  loop_control:
+    label: "{{item.key}}:{{item.value}}"
+  delegate_to: localhost
+
+# Set ISAM LDAP Instance SSL Configuration
+- name: Deploy the SSL Keystore
+  copy:
+    src: "{{ssl_keystore_path}}/{{isamldap_keystore}}"
+    dest: "{{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/etc/{{isamldap_keystore}}"
+    owner: "{{isamldap_instance_name}}"
+  when: ssl_keystore_path is defined and isamldap_keystore is defined
+
+- name: Deploy the SSL Stash file
+  copy: 
+    src: "{{ssl_keystore_path}}/{{isamldap_keystash}}"
+    dest: "{{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/etc/{{isamldap_keystash}}"
+    owner: "{{isamldap_instance_name}}"
+  when: ssl_keystore_path is defined and isamldap_keystash is defined
+
+- name: Configure Basic SSL
+  ldap_attr:
+    dn: "cn=SSL, cn=Configuration"
+    name: "{{item.key}}"
+    values: "{{item.value}}"
+    state: exact
+    server_uri: "ldap://{{isamldap_hostname}}/"
+    bind_dn: "{{ isamldap_admin_id}}"
+    bind_pw: "{{isamldap_admin_pwd}}"
+  with_dict:
+    ibm-slapdSecurity: "SSL"
+    ibm-slapdSslCertificate: "{{isamldap_keylabel}}"
+    ibm-slapdSslKeyDatabase: "{{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/etc/{{isamldap_keystore}}"
+  loop_control:
+    label: "{{item.key}}:{{item.value}}"
+  when: isamldap_keystore is defined and isamldap_keylabel is defined
+  delegate_to: localhost
+
+- name: Configure TLS
+  ldap_attr:
+    dn: "cn=SSL, cn=Configuration"
+    name: "{{item.key}}"
+    values: "{{item.value}}"
+    state: exact
+    server_uri: "ldap://{{isamldap_hostname}}/"
+    bind_dn: "{{ isamldap_admin_id}}"
+    bind_pw: "{{isamldap_admin_pwd}}"
+  with_dict: "{{isamldap_tls_settings}}"
+  loop_control:
+    label: "{{item.key}}"
+  when: isamldap_keystore is defined and isamldap_keylabel is defined
+  delegate_to: localhost
+
+# ISAM LDAP Master Server Entry for Replication
+- name: Master Server Entry for Replication
+  ldap_entry:
+    server_uri: "ldap://{{isamldap_hostname}}/"
+    bind_dn: "{{ isamldap_admin_id}}"
+    bind_pw: "{{isamldap_admin_pwd}}"
+    dn: "cn=Master Server, cn=Configuration"
+    objectClass:
+      - ibm-slapdConfigEntry
+      - ibm-slapdReplication
+    attributes:
+      cn: "Master Server"
+  delegate_to: localhost
+
+# Root suffix entry
+- name: Root Suffix Entry
+  ldap_entry:
+    server_uri: "ldap://{{isamldap_hostname}}/"
+    bind_dn: "{{ isamldap_admin_id}}"
+    bind_pw: "{{isamldap_admin_pwd}}"
+    dn: "{{isamldap_suffix}}"
+    objectClass:
+      - domain
+  when: isamldap_instance_primary is defined and isamldap_instance_primary
+  delegate_to: localhost
+
+# Configure Autostart for instance
+- name: Deploy IDSLDAP Service file
+  template:
+    src: "../templates/isamldap.service.j2"
+    dest: "/etc/systemd/system/idsslapd-{{isamldap_instance_name}}.service"
+    force: yes
+  register: debug_isamldap_service
+
+- name: Stop the ISAM LDAP instance
+  tdsinstance: 
+    instance: "{{isamldap_instance_name}}"
+    action: stop
+  when: debug_isamldap_service.changed
+
+- name: Stop the ISAM LDAP DB2 instance
+  db2instance:
+    instance: "{{isamldap_instance_name}}"
+    action: stop
+    force: True
+  when: debug_isamldap_service.changed
+
+- name: Enable ISAM LDAP Service
+  service:
+    name: "idsslapd-{{isamldap_instance_name}}.service"
+    enabled: yes
+    state: started

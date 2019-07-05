@@ -1,0 +1,59 @@
+---
+# roles/isamldap/defaults/main.yml
+# @version 2.00_2019-07-05
+# @author Kevin Jeffery
+
+# These vars can be overridden as required to use this role
+# Hostname for LDAP connection - should match isamldap_ip_addr if not all.
+isamldap_hostname: "{{inventory_hostname}}"
+isamldap_ip_addr: "all"
+isamldap_instance_name: "idsldap"
+isamldap_instance_pwd: "{{tds_instance_pwd}}"
+# Location of the LDAP instance files
+isamldap_instance_home: "/home/{{isamldap_instance_name}}"
+# Location of the DB2 instance files
+# isamldap_dblocation: ""
+# Location of the DB2 database files
+# isamldap_dbstorage: ""
+isamldap_admin_id: "cn=root"
+isamldap_admin_pwd: "{{tds_instance_pwd}}"
+isamldap_instance_seed: "EncryptionSeedString"
+# The encryption salt must be exactly 12 characters.
+# isamldap_instance_salt: ""
+isamldap_port: 389
+isamldap_sslport: 636
+isamldap_admin_port: 3538
+isamldap_admin_sslport: 3539
+isamldap_suffix: "DC=com"
+isamldap_secauthority_legacy: True
+isamldap_db_cfg:
+  - using: "LOGFILSIZ"
+    value: "10000"
+  - using: "LOGSECOND"
+    value: "12"
+# Path to ssl keystore files and key label
+# ssl_keystore_path: "../files"
+# isamldap_keystore:
+# isamldap_keystash:
+# isamldap_keylabel:
+isamldap_tls_settings:
+  ibm-slapdSecurityProtocol:
+    - "TLS12"
+  ibm-slapdSslCipherSpec:
+    - "TLS_RSA_WITH_AES_128_GCM_SHA256"
+    - "TLS_RSA_WITH_AES_256_GCM_SHA384"
+    - "TLS_RSA_WITH_AES_128_CBC_SHA256"
+    - "TLS_RSA_WITH_AES_256_CBC_SHA256"
+    - "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+    - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384"
+    - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+    - "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
+    - "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+    - "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+    - "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384"
+
+isamldap_repl_name: "cn=replid"
+isamldap_repl_pwd: "{{tds_instance_pwd}}"
+# Path to V3.modifiedschema for ISAM LDAP
+# isamldap_modifiedschema: ""

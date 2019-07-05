@@ -1,0 +1,145 @@
+---
+# roles/isamldap/tasks/isamldap_instance.yml
+# @version 2.01_2019-07-05
+# @author Kevin Jeffery
+
+- name: Create ISAM LDAP instance
+  tdsinstance:
+    instance: "{{isamldap_instance_name}}"
+    action: idsicrt
+    tdsapi:
+      seed: "{{isamldap_instance_seed}}"
+      salt: "{{isamldap_instance_salt|default(omit) }}"
+      location: "{{isamldap_instance_home}}"
+      ip_addr: "{{isamldap_ip_addr}}"
+      port: "{{isamldap_port}}"
+      sslport: "{{isamldap_sslport}}"
+      admin_port: "{{isamldap_admin_port}}"
+      admin_ssl_port: "{{isamldap_admin_sslport}}"
+  register: debug_idsicrt
+
+- name: Set Admin DN and Password
+  tdsinstance:
+    instance: "{{isamldap_instance_name}}"
+    action: idsdnpw
+    tdsapi:
+      admin_id: "{{isamldap_admin_id}}"
+      admin_pw: "{{isamldap_admin_pwd}}"
+  when: debug_idsicrt.changed    
+
+- name: Deploy V3.modifiedschema
+  copy:
+    src: "{{isamldap_modifiedschema}}"
+    dest: "{{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/etc/V3.modifiedschema"
+    owner: "{{isamldap_instance_name}}"
+    group: "idsldap"
+  when: isamldap_modifiedschema is defined
+
+- name: LDAP Database Location
+  file:
+    path: "{{isamldap_dblocation}}"
+    state: directory
+    owner: "{{isamldap_instance_name}}"
+    group: idsldap
+  when: isamldap_dblocation is defined
+
+- name: LDAP Database Storage
+  file:
+    path: "{{isamldap_dbstorage}}"
+    state: directory
+    owner: "{{isamldap_instance_name}}"
+    group: idsldap
+  when: isamldap_dbstorage is defined
+
+- name: Configure ISAM LDAP Database
+  tdsinstance:
+    instance: "{{isamldap_instance_name}}"
+    action: idscfgdb
+    tdsapi:
+      password: "{{isamldap_instance_pwd}}"
+      dblocation: "{{isamldap_instance_dblocation | default(omit)}}"
+      storage: "{{isamldap_instance_dbstorage | default(omit)}}"
+
+- name: Configure the {{isamldap_instance_name}} Database
+  db2database:
+    instance: "{{isamldap_instance_name}}"
+    dbname: "{{isamldap_instance_name}}"
+    action: "update_db_cfg"
+    db2api:
+      using: "{{cfg.using}}"
+      value: "{{cfg.value}}"
+  with_items: "{{isamldap_db_cfg}}"
+  loop_control:
+    loop_var: cfg
+    label: "using {{cfg.using}} {{cfg.value}}"
+  become: True
+  become_user: "{{isamldap_instance_name}}"
+  register: debug_db_cfg
+  when: debug_idsicrt.changed
+
+- name: Restart LDAP DB2 Instance
+  db2instance:
+    instance: "{{isamldap_instance_name}}"
+    action: "restart"
+    force: True
+  become: True
+  become_user: "{{isamldap_instance_name}}"
+  when: debug_db_cfg.changed
+
+- name: Configure ISAM LDAP Suffix
+  tdsinstance:
+    instance: "{{isamldap_instance_name}}"
+    action: idscfgsuf
+    tdsapi:
+      suffix: "{{isamldap_suffix}}"
+  when: debug_idsicrt.changed
+
+- name: Configure ISAM SecAuthority Suffix
+  tdsinstance:
+    instance: "{{isamldap_instance_name}}"
+    action: idscfgsuf
+    tdsapi:
+      suffix: "{{isamldap_secauthority_suffix | default('SecAuthority=Default')}}"
+  when: debug_idsicrt.changed and isamldap_secauthority_legacy
+
+- name: Update firewalld {{isamldap_port}}
+  firewalld:
+    port: "{{isamldap_port}}/tcp"
+    permanent: True
+    state: enabled
+  register: fw_ldapport
+
+- name: Update firewalld {{isamldap_sslport}}
+  firewalld:
+    port: "{{isamldap_sslport}}/tcp"
+    permanent: True
+    state: enabled
+  register: fw_ldapssl
+
+- name: Update firewalld {{isamldap_admin_port}}
+  firewalld:
+    port: "{{isamldap_admin_port}}/tcp"
+    permanent: True
+    state: enabled
+  register: fw_adminport
+
+- name: Update firewalld {{isamldap_admin_sslport}}
+  firewalld:
+    port: "{{isamldap_admin_sslport}}/tcp"
+    permanent: True
+    state: enabled
+  register: fw_adminssl
+
+- name: Restart firewalld
+  command: "firewall-cmd --reload"
+  when: fw_ldapport.changed or fw_ldapssl.changed or fw_adminport.changed or fw_adminssl.changed
+
+- name: Start the LDAP Instance
+  tdsinstance:
+    instance: "{{isamldap_instance_name}}"
+    action: start
+
+- name: Wait for first startup
+  wait_for:
+    host: "{{isamldap_hostname}}"
+    port: "{{isamldap_port}}"
