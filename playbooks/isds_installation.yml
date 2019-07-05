@@ -58,3 +58,7 @@
     register: rsync_result
     changed_when: rsync_result.stdout != ''
     when: javasdk_install is defined
+
+  - name: Restart server if DB2 installed
+    reboot:
+    when: db2_setup is defined and db2_setup.changed
