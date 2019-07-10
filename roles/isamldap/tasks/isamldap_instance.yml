@@ -1,7 +1,47 @@
 ---
 # roles/isamldap/tasks/isamldap_instance.yml
-# @version 2.01_2019-07-05
+# @version 2.01_2019-07-08
 # @author Kevin Jeffery
+
+- name: LDAP Database Location
+  file:
+    path: "{{isamldap_dblocation}}"
+    state: directory
+    owner: "{{isamldap_instance_name}}"
+    group: idsldap
+  when: isamldap_dblocation is defined
+
+- name: LDAP Database Storage
+  file:
+    path: "{{isamldap_dbstorage}}"
+    state: directory
+    owner: "{{isamldap_instance_name}}"
+    group: idsldap
+  when: isamldap_dbstorage is defined
+
+- name : LDAP Database Active Logs
+  file:
+    path: "{{isamldap_dblogdir}}"
+    state: directory
+    owner: "{{isamldap_instance_name}}"
+    group: idsldap
+  when: isamldap_dblogdir is defined
+
+- name : LDAP Database Archive Logs
+  file:
+    path: "{{isamldap_dblogarch}}"
+    state: directory
+    owner: "{{isamldap_instance_name}}"
+    group: idsldap
+  when: isamldap_dblogarch is defined
+
+- name : LDAP Backup Directory
+  file:
+    path: "{{isamldap_backup_dir}}"
+    state: directory
+    owner: "{{isamldap_instance_name}}"
+    group: idsldap
+  when: isamldap_backup_dir is defined
 
 - name: Create ISAM LDAP instance
   tdsinstance:
@@ -35,30 +75,15 @@
     group: "idsldap"
   when: isamldap_modifiedschema is defined
 
-- name: LDAP Database Location
-  file:
-    path: "{{isamldap_dblocation}}"
-    state: directory
-    owner: "{{isamldap_instance_name}}"
-    group: idsldap
-  when: isamldap_dblocation is defined
-
-- name: LDAP Database Storage
-  file:
-    path: "{{isamldap_dbstorage}}"
-    state: directory
-    owner: "{{isamldap_instance_name}}"
-    group: idsldap
-  when: isamldap_dbstorage is defined
-
 - name: Configure ISAM LDAP Database
   tdsinstance:
     instance: "{{isamldap_instance_name}}"
     action: idscfgdb
     tdsapi:
       password: "{{isamldap_instance_pwd}}"
-      dblocation: "{{isamldap_instance_dblocation | default(omit)}}"
-      storage: "{{isamldap_instance_dbstorage | default(omit)}}"
+      dblocation: "{{isamldap_dblocation | default(omit)}}"
+      storage: "{{isamldap_dbstorage | default(omit)}}"
+      backup_dir: "{{isamldap_backup_dir | default(omit)}}"
 
 - name: Configure the {{isamldap_instance_name}} Database
   db2database:
@@ -102,6 +127,16 @@
       suffix: "{{isamldap_secauthority_suffix | default('SecAuthority=Default')}}"
   when: debug_idsicrt.changed and isamldap_secauthority_legacy
 
+- name: Backup LDAP Instance
+  tdsinstance:
+    instance: "{{isamldap_instance_name}}"
+    action: idsdbback
+    tdsapi:
+      backup_dir: "{{isamldap_backup_dir}}"
+      archive_dir: "{{isamldap_dblogarch | default(omit)}}"
+      type: "online"
+  when: debug_idsicrt.changed and isamldap_backup_dir is defined
+
 - name: Update firewalld {{isamldap_port}}
   firewalld:
     port: "{{isamldap_port}}/tcp"
@@ -141,5 +176,6 @@
 
 - name: Wait for first startup
   wait_for:
-    host: "{{isamldap_hostname}}"
+    delay: 15
+    host: "0.0.0.0"
     port: "{{isamldap_port}}"

@@ -1,6 +1,6 @@
 ---
 # roles/isamldap/defaults/main.yml
-# @version 2.00_2019-07-05
+# @version 2.01_2019-07-10
 # @author Kevin Jeffery
 
 # These vars can be overridden as required to use this role
@@ -15,6 +15,11 @@ isamldap_instance_home: "/home/{{isamldap_instance_name}}"
 # isamldap_dblocation: ""
 # Location of the DB2 database files
 # isamldap_dbstorage: ""
+# Location of the LDAP Instance online backup files
+# isamldap_backup_dir
+# Schedule for online backup
+# 0=Sunday, 6=Saturday, 7=Every day
+# isamldap_backup=every: "7-23:59"
 isamldap_admin_id: "cn=root"
 isamldap_admin_pwd: "{{tds_instance_pwd}}"
 isamldap_instance_seed: "EncryptionSeedString"

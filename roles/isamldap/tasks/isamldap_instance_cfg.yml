@@ -119,13 +119,45 @@
   when: isamldap_instance_primary is defined and isamldap_instance_primary
   delegate_to: localhost
 
-# Configure Autostart for instance
+# Enable online backup
+- name: Enable Online Backup
+  ldap_attr:
+    dn: "cn=RDBM Backup, cn=Configuration"
+    name: "{{item.key}}"
+    values: "{{item.value}}"
+    state: exact
+    server_uri: "ldap://{{isamldap_hostname}}/"
+    bind_dn: "{{isamldap_admin_id}}"
+    bind_pw: "{{isamldap_admin_pwd}}"
+  with_dict:
+    ibm-slapdBackupChangelog: "{{isamldap_backup_changelog | default('FALSE')}}"
+    ibm-slapdBackupEnabled: "TRUE"
+    ibm-slapdBackupEvery: "{{isamldap_backup_every}}"
+  loop_control:
+    label: "{{item.key}}:{{item.value}}"
+  when: isamldap_backup_every is defined
+  delegate_to: localhost
+
+# Configure Autostart for instance components
 - name: Deploy IDSLDAP Service file
   template:
     src: "../templates/isamldap.service.j2"
     dest: "/etc/systemd/system/idsslapd-{{isamldap_instance_name}}.service"
     force: yes
   register: debug_isamldap_service
+
+- name: Deploy IDSLDAP Admin Service file
+  template:
+    src: "../templates/isamdiradmin.service.j2"
+    dest: "/etc/systemd/system/ibmdiradm-{{isamldap_instance_name}}.service"
+    force: yes
+  register: debug_isamdiradmin_service
+
+- name: Stop the ISAM LDAP Admin instance
+  tdsinstance: 
+    instance: "{{isamldap_instance_name}}"
+    action: adminstop
+  when: debug_isamdiradmin_service.changed
 
 - name: Stop the ISAM LDAP instance
   tdsinstance: 
@@ -143,5 +175,11 @@
 - name: Enable ISAM LDAP Service
   service:
     name: "idsslapd-{{isamldap_instance_name}}.service"
+    enabled: yes
+    state: started
+
+- name: Enable ISAM LDAP Admin Service
+  service:
+    name: "ibmdiradm-{{isamldap_instance_name}}.service"
     enabled: yes
     state: started

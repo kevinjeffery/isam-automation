@@ -1,0 +1,17 @@
+# Start of service file
+# ibmdiradm service template 
+# @version 2.00_2019-JUL-10
+[Unit]
+Description=IBM Security Directory Administration Server {{isamldap_instance_name}}
+After=local-fs.target network-online.target
+
+[Service]
+Type=forking
+#GuessMainPID=no
+#PIDFile={{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/tmp/slapd.pid
+ExecStart={{ldap_home}}/sbin/ibmdiradm -I {{isamldap_instance_name}}
+ExecStop={{ldap_home}}/sbin/ibmdiradm -I {{isamldap_instance_name}} -k
+
+[Install]
+WantedBy=default.target
+# End of service file

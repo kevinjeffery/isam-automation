@@ -22,6 +22,8 @@ class TDSInstance:
     self._get_facts()
     self.cmd_start = "idsslapd -I {0} -n".format(self.instance)
     self.cmd_stop  = "idsslapd -I {0} -k".format(self.instance)
+    self.cmd_adminstop = "ibmdiradm -I {0} -k".format(self.instance)
+    self.cmd_adminstart = "ibmdiradm -I {0}".format(self.instance)
 
   def _get_facts(self):
     inst_name = self.instance
@@ -110,6 +112,8 @@ class TDSInstance:
     idscfgdb_options += " -l " + location
     if 'storage' in self.tdsapi:
       idscfgdb_options += " -s " + self.tdsapi['storage']
+    if 'backup_dir' in self.tdsapi:
+      idscfgdb_options += " -k " + self.tdsapi['backup_dir']
     cmd  = "idscfgdb" + idscfgdb_options + " -n -q"
     rc, stdout, stderr = self._sbin_command(cmd, "Failed to configure database", ignore_stderr=True)
     self.module.exit_json(changed=True, rc=rc, stdout=stdout, stderr=stderr)
@@ -155,14 +159,46 @@ class TDSInstance:
     rc, stdout, stderr = self._sbin_command(cmd, "Failed to configure suffix {0}".format(suffix))
     self.module.exit_json(changed=True, rc=rc, stdout=stdout, stderr=stderr)
 
+  def idsdbback(self):
+    inst_name = self.instance
+    is_online = False
+    self.module.debug("*** Start backup")
+    idsdbback_options = " -I " + inst_name
+    if self.tdsapi is None:
+      self.module.fail_json(changed=False, msg="tdsapi parameters are required")
+    if 'backup_dir' in self.tdsapi:
+      idsdbback_options += " -k " + self.tdsapi['backup_dir']
+    else:
+      self.module.fail_json(changed=False, msg="Error, backup_dir is required")
+    if 'type' in self.tdsapi:
+      if self.tdsapi['type'] == 'online':
+        is_online = True
+    if is_online:
+      idsdbback_options += " -u "
+      if 'archive_dir' in self.tdsapi:
+        idsdbback_options += " -a " + self.tdsapi['archive_dir']
+    cmd = "idsdbback" + idsdbback_options + " -n -q"
+    rc, stdout, stderr = self._sbin_command(cmd, "Failed to backup instance", ignore_stderr=is_online)
+    self.module.exit_json(changed=True, rc=rc, stdout=stdout, stderr=stderr)
+  
+
   def start(self):
     inst_name = self.instance
-    self.module.debug("*** Start {0}".format(inst_name))
+    self.module.debug("*** Start instance {0}".format(inst_name))
     if not self._instance_up():
-      rc, stdout, stderr = self._sbin_command(self.cmd_start, "Error, could not start instance {0}".format(inst_name), ignore_stderr=True)
+      rc, stdout, stderr = self._sbin_command(self.cmd_start, "Error, could not start {0} instance".format(inst_name), ignore_stderr=True)
       self.module.exit_json(changed=True, msg="Instance {0} started".format(self.instance),stderr=stderr, rc=rc, stdout=stdout)
     else:
       self.module.exit_json(changed=False, msg="Instance {0} running".format(inst_name))
+
+  def adminstart(self):
+    inst_name = self.instance
+    self.module.debug("*** Start admin instance {0}".format(inst_name))
+    if not self._admin_up():
+      rc, stdout, stderr = self._sbin_command(self.cmd_adminstart, "Error, could not start {0} admin instance}".format(inst_name), ignore_stderr=True)
+      self.module.exit_json(changed=True, msg="Admin instance {0} started".format(self.instance),stderr=stderr, rc=rc, stdout=stdout)
+    else:
+      self.module.exit_json(changed=False, msg="Admin instance {0} running".format(inst_name))
 
   def stop(self):
     inst_name = self.instance
@@ -174,14 +210,33 @@ class TDSInstance:
     else:
       self.module.exit_json(changed=False, msg="Instance {0} not running".format(inst_name))
 
+  def adminstop(self):
+    inst_name = self.instance
+    self.module.debug("*** Stop admin instance {0}".format(inst_name))
+    if self._admin_up():
+      # Stop the admin instance
+      rc, stdout, stderr = self._sbin_command(self.cmd_adminstop, "Error, could not stop {0} admin instance".format(inst_name), ignore_stderr=True)
+      self.module.exit_json(changed=True, msg="Admin instance stopped",stderr=stderr, rc=rc, stdout=stdout)
+    else:
+      self.module.exit_json(changed=False, msg="Admin nstance {0} not running".format(inst_name))
+
   def restart(self):
     inst_name = self.instance
-    self.module.debug("*** Restart {0}".format(self.instance))
+    self.module.debug("*** Restart {0} Instance".format(self.instance))
     if self._instance_up():
       # Stop the instance
       rc, stdout, stderr = self._sbin_command(self.cmd_stop, "Error, could not stop {0} instance".format(inst_name))
     rc, stdout, stderr = self._sbin_command(self.cmd_start, "Error, cound not restart {0} instance".format(inst_name), ignore_stderr=True)
     self.module.exit_json(changed=True, msg="Instance {0} restarted".format(inst_name),stderr=stderr, rc=rc, stdout=stdout)
+
+  def adminrestart(self):
+    inst_name = self.instance
+    self.module.debug("*** Restart {0}".format(self.instance))
+    if self._admin_up():
+      # Stop the admin instance
+      rc, stdout, stderr = self._sbin_command(self.cmd_adminstop, "Error, could not stop {0} admin instance".format(inst_name))
+    rc, stdout, stderr = self._sbin_command(self.cmd_adminstart, "Error, cound not restart {0} admin instance".format(inst_name), ignore_stderr=True)
+    self.module.exit_json(changed=True, msg="Admin instance {0} restarted".format(inst_name),stderr=stderr, rc=rc, stdout=stdout)
 
   def _get_instance_data(self):
     idsinstances = os.path.split(self.tdshome)[0] + "/idsinstinfo/idsinstances.ldif"
@@ -306,6 +361,11 @@ class TDSInstance:
     rc, stdout, stderr = self.module.run_command(cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)
     return rc == 0
 
+  def _admin_up(self):
+    cmd = "ps -u {0} | grep -q ibmdiradm".format(self.instance)
+    rc, stdout, stderr = self.module.run_command(cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)
+    return rc == 0
+
   def set_config(self, attribute):
     # attribute is a dict: {dn: <dn>, attrname: <attrname>, attrvalue: <str or list of str>}
     # check current values by iterating lists of values both ways.
@@ -356,7 +416,7 @@ def main():
         supports_check_mode=False
     )
 
-    module.debug('Started db2instance module')
+    module.debug('Started tdsinstance module')
     
     tdsinst = TDSInstance(module)
     tdsinst.parse_params()
@@ -373,6 +433,9 @@ def main():
     if tdsinst.action == "idscfgdb":
       tdsinst.idscfgdb()
     
+    if tdsinst.action == "idsdbback":
+      tdsinst.idsdbback()
+    
     if tdsinst.action == "idscfgsuf":
       tdsinst.idscfgsuf()
     
@@ -385,8 +448,17 @@ def main():
     if tdsinst.action == "stop":
       tdsinst.stop()
 
+    if tdsinst.action == "adminstart":
+      tdsinst.adminstart()
+
+    if tdsinst.action == "adminstop":
+      tdsinst.adminstop()
+
     if tdsinst.action == "restart":
       tdsinst.restart()
+    
+    if tdsinst.action == "adminrestart":
+      tdsinst.adminrestart()
     
     if tdsinst.action == "set_config":
       if 'tdsapi' in module.params:
