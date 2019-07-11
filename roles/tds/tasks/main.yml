@@ -68,20 +68,20 @@
     opts: "loop,ro"
     src: "{{tds_install.dest}}/{{tds_install.imagename}}"
     fstype: iso9660
-    path: /mnt/tds
+    path: "{{tds_install_mount_point}}"
     state: mounted
   changed_when: false
   become: True
 
 - name: TDS License
-  command: "/mnt/tds/license/idsLicense -q"
+  command: "{{tds_install_mount_point}}/license/idsLicense -q"
   args:
     creates: "{{tds_install.file}}/license"
   become: True
   become_method: sudo
 
 - name: TDS Install
-  command: "rpm --force -ivh /mnt/tds/images/idsldap*"
+  command: "rpm --force -ivh {{tds_install_mount_point}}/images/idsldap*"
   args:
     creates: "{{tds_install.file}}/sbin"
     warn: False
@@ -119,7 +119,7 @@
 
 - name: Un-mount the ISO Image
   mount: 
-    path: /mnt/tds
+    path: "{{tds_install_mount_point}}""
     state: unmounted
   changed_when: False
   failed_when: False

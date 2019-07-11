@@ -12,6 +12,7 @@ tds_instances:
   password: "{{tds_instance_pwd | password_hash('sha512', 61420 | random(seed=inventory_hostname) | string)}}"
 
 # The following can be overridden with group or host variables
+tds_install_mount_point: "/mnt/tds"
 tds_install_file: "{{ldap_home | default('/opt/ibm/ldap/V6.4')}}"
 tds_install_imagename: "sds64-linux-x86-64.iso"
 tds_install_iso_url: ""
