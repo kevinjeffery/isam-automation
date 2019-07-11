@@ -42,7 +42,7 @@
 - name: Download the  Fixpack
   get_url:
     url: "{{tds_install.fixpack_url}}"
-    dest: "{{tds_install.dest}}/{{tds_install.fixpack_basename}}"
+    dest: "{{tds_install.dest}}/{{tds_install.fixpack_basename}}.tar.gz"
     headers: "{{tds_download_headers | default(omit)}}"
     validate_certs: "no"
   become: True
