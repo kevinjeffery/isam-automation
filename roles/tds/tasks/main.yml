@@ -1,6 +1,6 @@
 ---
 # roles/tds/tasks/main.yml
-# @version 2.04_2019-07-11
+# @version 2.05_2019-07-11
 # @author Kevin Jeffery
 # TDS Installation
 
@@ -28,6 +28,7 @@
     dest: "{{tds_install.dest}}/{{tds_install.imagename}}"
     headers: "{{tds_download_headers | default(omit)}}"
     validate_certs: "no"
+    tmp_dest: "/tmp"
   become: True
   when: tds_install.iso_url != ""
 
@@ -41,7 +42,7 @@
 - name: Download the  Fixpack
   get_url:
     url: "{{tds_install.fixpack_url}}"
-    dest: "{{tds_install.dest}}/{{tds_install.imagename}}"
+    dest: "{{tds_install.dest}}/{{tds_install.fixpack_basename}}"
     headers: "{{tds_download_headers | default(omit)}}"
     validate_certs: "no"
   become: True
