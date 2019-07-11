@@ -1,6 +1,6 @@
 ---
 # roles/gskit/tasks/main.yml
-# @version v2.03_2019-07-02
+# @version v2.04_2019-07-11
 # @author Kevin Jeffery
 
 # Install the system GSKit
@@ -9,6 +9,7 @@
     url: "{{gskit_install.url}}"
     dest: "{{gskit_install.dest}}/{{gskit_install.archive}}"
     headers: "{{gskit_download_headers | default(omit)}}"
+    validate_certs: "no"
   when: gskit_install.url != ""
 
 - name: Stage the GSKit archive

@@ -1,6 +1,6 @@
 ---
 # roles/db2/tasks/get_db2.yml
-# @version 2.03_2019-07-04
+# @version 2.04_2019-07-11
 # @author Kevin Jeffery - kjeffery@ca.ibm.com
 #Download a DB2 copy from a custom URL (Could be a http, an ftp whatever.)
 
@@ -9,6 +9,7 @@
     url: "{{db2_install.url}}"
     dest: "{{db2_install.dest}}/{{db2_install.archive}}"
     headers: "{{db2_download_headers | default(omit)}}"
+    validate_certs: "no"
   when: db2_install.url != ""
 
 - name: Stage DB2 Binary
