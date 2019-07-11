@@ -23,6 +23,7 @@
     url: "{{db2_license.url}}"
     dest: "{{db2_license.dest}}/{{db2_license.archive}}"
     headers: "{{db2_download_headers | default(omit)}}"
+    validate_certs: "no"
   when: db2_license.enabled == "true" and db2_license.url != ""
 
 - name: Stage DB2 License
@@ -36,6 +37,7 @@
     url: "{{db2_highcapacity.url}}"
     dest: "{{db2_highcapacity.dest}}/{{db2_highcapacity.archive}}"
     headers: "{{db2_download_headers | default(omit)}}"
+    validate_certs: "no"
   when: db2_highcapacity.enabled == "true" and db2_highcapacity.url != ""
 
 - name: Stage DB2 High volume
