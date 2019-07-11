@@ -1,12 +1,11 @@
 ---
 # isamldap.yml
-# @version 2.01_2019-07-04
+# @version 2.02_2019-07-11
 # @author Kevin Jeffery
 #
 # ISAM LDAP Instance Creation
 - name: Configure ISAM LDAP Instance
   hosts: isamldap_servers
-  become: yes
   roles:
   - name: setup
   - name: isamldap

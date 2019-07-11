@@ -7,6 +7,7 @@
     name: "epel-release"
     state: "latest"
     update_cache: "yes"
+  become: yes
   when:  package_manager_enabled and ansible_os_family == "RedHat"
 
 - name: Install some useful packages - RedHat
@@ -14,6 +15,7 @@
     name: "{{useful_packages}}"
     state: "latest"
     update_cache: "yes"
+  become: yes
   when:  package_manager_enabled and ansible_os_family == "RedHat"
 
 - name: Install some useful packages - Debian
@@ -21,6 +23,7 @@
     name: "{{useful_packages}}"
     state: "installed"
     update_cache: "yes"
+  become: yes
   when:  package_manager_enabled and ansible_os_family == "Debian"
 
 - name: Create ibm Directory
@@ -30,12 +33,14 @@
     mode: 0755
     owner: root
     group: root
+  become: yes
 
 - name: Create IBM Symlink
   file:
     src: /opt/ibm
     dest: /opt/IBM
     state: link
+  become: yes
 
 - name: Create the Software repository
   file:
@@ -44,6 +49,7 @@
     mode: 0755
     owner: root
     group: root
+  become: yes
   when: software_dest_dir is defined
 
 - name: Creating DB2 Fenced Groups
@@ -54,6 +60,7 @@
   with_items: "{{ db2_instances }}"
   loop_control:
     label: "{{item.fenced_group_name}}"
+  become: yes
   when: db2_instances is defined
 
 - name: Creating DB2 Instance Groups
@@ -64,6 +71,7 @@
   with_items: "{{ db2_instances }}"
   loop_control:
     label: "{{item.group_name}}"
+  become: yes
   when: db2_instances is defined
 
 - name: Creating TDS Instance Groups
@@ -74,6 +82,7 @@
   with_items: "{{ tds_instances }}"
   loop_control:
     label: "{{item.group_name}}"
+  become: yes
   when: tds_instances is defined
 
 - name: Create the ISAM LDAP Data Directory
@@ -82,6 +91,7 @@
     state: directory
     mode: 0770
     group: idsldap
+  become: yes
   when: isamldap_instance_home is defined
 
 - name: Create the ISIM LDAP Data Directory
@@ -90,6 +100,7 @@
     state: directory
     mode: 0770
     group: idsldap
+  become: yes
   when: isimldap_instance_home is defined
 
 - name: Create the ISAM DB2 Data Directory
@@ -98,6 +109,7 @@
     state: directory
     mode: 0770
     group: db2admin
+  become: yes
   when: isamdb_path is defined
 
 - name: Create the ISIM DB2 Data Directory
@@ -106,6 +118,7 @@
     state: directory
     mode: 0770
     group: db2admin
+  become: yes
   when: isimdb_path is defined
 
 - name: Create the IGI DB2 Data Directory
@@ -114,4 +127,5 @@
     state: directory
     mode: 0770
     group: db2admin
+  become: yes
   when: igidb_path is defined

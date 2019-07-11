@@ -1,6 +1,6 @@
 ---
 # roles/isamldap/tasks/isamldap_instance_cfg.yml
-# @version v2.01_2019-07-05
+# @version v2.02_2019-07-11
 # @author Kevin Jeffery
 
 # Standard LDAP Instance Settings
@@ -51,6 +51,7 @@
     src: "{{ssl_keystore_path}}/{{isamldap_keystore}}"
     dest: "{{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/etc/{{isamldap_keystore}}"
     owner: "{{isamldap_instance_name}}"
+  become: yes
   when: ssl_keystore_path is defined and isamldap_keystore is defined
 
 - name: Deploy the SSL Stash file
@@ -58,6 +59,7 @@
     src: "{{ssl_keystore_path}}/{{isamldap_keystash}}"
     dest: "{{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/etc/{{isamldap_keystash}}"
     owner: "{{isamldap_instance_name}}"
+  become: yes
   when: ssl_keystore_path is defined and isamldap_keystash is defined
 
 - name: Configure Basic SSL
@@ -144,6 +146,7 @@
     src: "../templates/isamldap.service.j2"
     dest: "/etc/systemd/system/idsslapd-{{isamldap_instance_name}}.service"
     force: yes
+  become: yes
   register: debug_isamldap_service
 
 - name: Deploy IDSLDAP Admin Service file
@@ -151,18 +154,21 @@
     src: "../templates/isamdiradmin.service.j2"
     dest: "/etc/systemd/system/ibmdiradm-{{isamldap_instance_name}}.service"
     force: yes
+  become: yes
   register: debug_isamdiradmin_service
 
 - name: Stop the ISAM LDAP Admin instance
   tdsinstance: 
     instance: "{{isamldap_instance_name}}"
     action: adminstop
+  become: yes
   when: debug_isamdiradmin_service.changed
 
 - name: Stop the ISAM LDAP instance
   tdsinstance: 
     instance: "{{isamldap_instance_name}}"
     action: stop
+  become: yes
   when: debug_isamldap_service.changed
 
 - name: Stop the ISAM LDAP DB2 instance
@@ -170,6 +176,8 @@
     instance: "{{isamldap_instance_name}}"
     action: stop
     force: True
+  become: True
+  become_user: "{{isamldap_instance_name}}"
   when: debug_isamldap_service.changed
 
 - name: Enable ISAM LDAP Service
@@ -177,9 +185,11 @@
     name: "idsslapd-{{isamldap_instance_name}}.service"
     enabled: yes
     state: started
+  become: yes
 
 - name: Enable ISAM LDAP Admin Service
   service:
     name: "ibmdiradm-{{isamldap_instance_name}}.service"
     enabled: yes
     state: started
+  become: yes

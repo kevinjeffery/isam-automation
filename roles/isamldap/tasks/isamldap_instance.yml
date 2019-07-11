@@ -1,6 +1,6 @@
 ---
 # roles/isamldap/tasks/isamldap_instance.yml
-# @version 2.01_2019-07-08
+# @version 2.02_2019-07-11
 # @author Kevin Jeffery
 
 - name: LDAP Database Location
@@ -9,6 +9,7 @@
     state: directory
     owner: "{{isamldap_instance_name}}"
     group: idsldap
+  become: yes
   when: isamldap_dblocation is defined
 
 - name: LDAP Database Storage
@@ -17,6 +18,7 @@
     state: directory
     owner: "{{isamldap_instance_name}}"
     group: idsldap
+  become: yes
   when: isamldap_dbstorage is defined
 
 - name : LDAP Database Active Logs
@@ -25,6 +27,7 @@
     state: directory
     owner: "{{isamldap_instance_name}}"
     group: idsldap
+  become: yes
   when: isamldap_dblogdir is defined
 
 - name : LDAP Database Archive Logs
@@ -33,6 +36,7 @@
     state: directory
     owner: "{{isamldap_instance_name}}"
     group: idsldap
+  become: yes
   when: isamldap_dblogarch is defined
 
 - name : LDAP Backup Directory
@@ -41,6 +45,7 @@
     state: directory
     owner: "{{isamldap_instance_name}}"
     group: idsldap
+  become: yes
   when: isamldap_backup_dir is defined
 
 - name: Create ISAM LDAP instance
@@ -56,6 +61,7 @@
       sslport: "{{isamldap_sslport}}"
       admin_port: "{{isamldap_admin_port}}"
       admin_ssl_port: "{{isamldap_admin_sslport}}"
+  become: yes
   register: debug_idsicrt
 
 - name: Set Admin DN and Password
@@ -65,6 +71,7 @@
     tdsapi:
       admin_id: "{{isamldap_admin_id}}"
       admin_pw: "{{isamldap_admin_pwd}}"
+  become: yes
   when: debug_idsicrt.changed    
 
 - name: Deploy V3.modifiedschema
@@ -73,6 +80,7 @@
     dest: "{{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/etc/V3.modifiedschema"
     owner: "{{isamldap_instance_name}}"
     group: "idsldap"
+  become: yes
   when: isamldap_modifiedschema is defined
 
 - name: Configure ISAM LDAP Database
@@ -84,6 +92,7 @@
       dblocation: "{{isamldap_dblocation | default(omit)}}"
       storage: "{{isamldap_dbstorage | default(omit)}}"
       backup_dir: "{{isamldap_backup_dir | default(omit)}}"
+  become: yes
 
 - name: Configure the {{isamldap_instance_name}} Database
   db2database:
@@ -117,6 +126,7 @@
     action: idscfgsuf
     tdsapi:
       suffix: "{{isamldap_suffix}}"
+  become: yes
   when: debug_idsicrt.changed
 
 - name: Configure ISAM SecAuthority Suffix
@@ -125,6 +135,7 @@
     action: idscfgsuf
     tdsapi:
       suffix: "{{isamldap_secauthority_suffix | default('SecAuthority=Default')}}"
+  become: yes
   when: debug_idsicrt.changed and isamldap_secauthority_legacy
 
 - name: Backup LDAP Instance
@@ -135,6 +146,7 @@
       backup_dir: "{{isamldap_backup_dir}}"
       archive_dir: "{{isamldap_dblogarch | default(omit)}}"
       type: "online"
+  become: yes
   when: debug_idsicrt.changed and isamldap_backup_dir is defined
 
 - name: Update firewalld {{isamldap_port}}
@@ -142,6 +154,7 @@
     port: "{{isamldap_port}}/tcp"
     permanent: True
     state: enabled
+  become: yes
   register: fw_ldapport
 
 - name: Update firewalld {{isamldap_sslport}}
@@ -149,6 +162,7 @@
     port: "{{isamldap_sslport}}/tcp"
     permanent: True
     state: enabled
+  become: yes
   register: fw_ldapssl
 
 - name: Update firewalld {{isamldap_admin_port}}
@@ -156,6 +170,7 @@
     port: "{{isamldap_admin_port}}/tcp"
     permanent: True
     state: enabled
+  become: yes
   register: fw_adminport
 
 - name: Update firewalld {{isamldap_admin_sslport}}
@@ -163,19 +178,23 @@
     port: "{{isamldap_admin_sslport}}/tcp"
     permanent: True
     state: enabled
+  become: yes
   register: fw_adminssl
 
 - name: Restart firewalld
   command: "firewall-cmd --reload"
+  become: yes
   when: fw_ldapport.changed or fw_ldapssl.changed or fw_adminport.changed or fw_adminssl.changed
 
 - name: Start the LDAP Instance
   tdsinstance:
     instance: "{{isamldap_instance_name}}"
     action: start
+  become: yes
 
 - name: Wait for first startup
   wait_for:
     delay: 15
     host: "0.0.0.0"
     port: "{{isamldap_port}}"
+  become: yes

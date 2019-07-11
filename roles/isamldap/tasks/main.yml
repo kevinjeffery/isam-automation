@@ -13,6 +13,7 @@
   tdsinstance:
     instance: "{{isamldap_instance_name}}"
     action: get_config
+  become: yes
   register: get_config
 
 - name: Config info
