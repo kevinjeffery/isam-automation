@@ -21,3 +21,7 @@ This playbook is responsible for installation of the ISDS software, fixpack and 
 ## isamldap_instance.yml
 This playbook automates the configuration of the ISAM ISDS instance with most command line options supported.
 
+Credits
+---------------------
+The initial idea for the ISDS installation and configuration came from work done by Bernardo Vale.
+https://github.com/bernardoVale/ansible-role-db2
