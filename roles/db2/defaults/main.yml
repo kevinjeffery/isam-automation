@@ -4,7 +4,10 @@
 # @author Kevin Jeffery 
 # Response file keywords: https://www-01.ibm.com/support/knowledgecenter/SSEPGG_10.5.0/com.ibm.db2.luw.qb.server.doc/doc/r0007505.html
 
-# The following can be overridden with group or host variables
+# Use this variable to disable your package manager if your system is not connected to any reposiotry
+# Use this variable to disable your package manager if your system is not connected to any reposiotry
+package_manager_enabled: True
+
 db2_install_url: ""
 db2_install_version: "10.5.0.9"
 db2_install_archive: "v10.5fp9_linuxx64_server_t.tar.gz"
@@ -12,7 +15,7 @@ db2_install_creates: server_t
 # Packages required for both DB2 v10.5 and DB2 v11.1
 db2_install_packages:
   - pam
-  - pam.i386
+  - pam.i686
   - ksh
 # Comment lines below for DB2 v11.1 or override with variables
   - libaio

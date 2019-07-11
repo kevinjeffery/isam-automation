@@ -5,5 +5,8 @@
 tds_instance_pwd: "Passw0rd"
 db2_instance_pwd: "Passw0rd"
 
+# Use this variable to disable your package manager if your system is not connected to any reposiotry
+package_manager_enabled: True
+
 useful_packages:
 - "unzip"

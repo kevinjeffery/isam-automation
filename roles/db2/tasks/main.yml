@@ -1,15 +1,15 @@
 ---
 # roles/db2/tasks/main.yml
-# @version 2.02_2019-07-03
+# @version 2.03_2019-07-11
 # @author Kevin Jeffery
 
   - import_tasks: get_db2.yml
 
   - import_tasks: packages-redhat.yml
-    when: ansible_os_family == "RedHat"
+    when: package_manager_enabled and ansible_os_family == "RedHat"
 
   - import_tasks: packages-debian.yml
-    when: ansible_os_family == "Debian"
+    when:  package_manager_enabled and ansible_os_family == "Debian"
 
   - import_tasks: db2_instance_users.yml
     when: db2_instances is defined
