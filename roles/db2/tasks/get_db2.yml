@@ -10,6 +10,7 @@
     dest: "{{db2_install.dest}}/{{db2_install.archive}}"
     headers: "{{db2_download_headers | default(omit)}}"
     validate_certs: "no"
+    tmp_dest: "/tmp"
   when: db2_install.url != ""
 
 - name: Stage DB2 Binary
