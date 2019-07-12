@@ -119,7 +119,7 @@
 
 - name: Un-mount the ISO Image
   mount: 
-    path: "{{tds_install_mount_point}}""
+    path: "{{tds_install_mount_point}}"
     state: unmounted
   changed_when: False
   failed_when: False

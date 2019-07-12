@@ -3,6 +3,12 @@
 # @version 2.02_2019-07-04
 # @author Kevin Jeffery
 
+- name: Add root to idsldap group
+  user:
+    name: root
+    groups: idsldap
+    append: true
+
 - name: Creating TDS Instance Users
   user:
     name: "{{item.name}}"
