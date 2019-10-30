@@ -1,0 +1,75 @@
+---
+# playbooks/isds_software.yml
+# @version 1.01_2019-07-15
+# @author Kevin Jeffery
+#
+# Install IBM Directory Server software
+
+- name: Install TDS
+  hosts: ldap
+  become: yes
+  roles:
+  - name: setup
+
+  - name: gskit
+    when: gskit_install is defined
+
+  - name: javasdk
+    when: javasdk_install is defined
+
+  - name: db2
+
+  - name: tds
+
+  post_tasks:
+  - set_fact:
+      rsync_dry_run: "--dry-run"
+    when: ansible_check_mode | bool
+
+# Sync GSKit and Java SDK to DB2 and TDS
+  - name: Sync DB2 GSKit32
+    shell: "rsync --itemize-changes --archive {{ rsync_dry_run | default('') }} /usr/local/ibm/gsk8/lib/ {{db2_install.file}}/lib32/gskit_db2/"
+    # always run
+    check_mode: no
+    register: rsync_result
+    changed_when: rsync_result.stdout != ''
+    when: gskit_install is defined
+
+  - name: Sync DB2 GSKit64
+    shell: "rsync --itemize-changes --archive {{ rsync_dry_run | default('') }} /usr/local/ibm/gsk8_64/lib64/ {{db2_install.file}}/lib64/gskit_db2/"
+    # always run
+    check_mode: no
+    register: rsync_result
+    changed_when: rsync_result.stdout != ''
+    when: gskit_install is defined
+
+  - name: Sync DB2 Java SDK
+    shell: "rsync --itemize-changes --archive {{ rsync_dry_run | default('') }} {{javasdk_install.dest}}/java/ {{db2_install.file}}/java/jdk64/"
+    # always run
+    check_mode: no
+    register: rsync_result
+    changed_when: rsync_result.stdout != ''
+    when: javasdk_install is defined
+
+  - name: Sync TDS Java SDK
+    shell: "rsync --itemize-changes --archive {{ rsync_dry_run | default('') }} {{javasdk_install.dest}}/java/ {{tds_install.file}}/java/"
+    # always run
+    check_mode: no
+    register: rsync_result
+    changed_when: rsync_result.stdout != ''
+    when: javasdk_install is defined
+
+  - name: Restart server if DB2 installed
+    shell: 'sleep 1 && shutdown -r now "Reboot triggered by Ansible" && sleep 1'
+    async: 1
+    poll: 0
+    become: true
+    when: db2_setup is defined and db2_setup.changed
+
+  - name: Wait for server to restart
+    wait_for:
+      host: "{{ inventory_hostname }}"
+      port: 22
+      delay: 15
+    delegate_to: localhost
+    when: db2_setup is defined and db2_setup.changed

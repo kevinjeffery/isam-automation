@@ -110,3 +110,5 @@ software/
 # Playbook retry files
 *.retry
 
+# Archives
+*.7z

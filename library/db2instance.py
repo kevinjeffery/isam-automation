@@ -270,13 +270,13 @@ def main():
     if db2inst.action == "set_dbm_cfg":
       if isinstance(module.params['db2api'], dict):
         for key, value in module.params['db2api'].iteritems():
-          if key == "name":
-            name = value
+          if key == "using":
+            using = value
           if key == "value":
             newvalue = value
-        if name is None or newvalue is None:
+        if using is None or newvalue is None:
           module.fail_json(changed=False, msg="Missing one or more db2api parameters")
-        db2inst.set_dbm_cfg(name,newvalue)
+        db2inst.set_dbm_cfg(using, newvalue)
       else:
         module.fail_json(changed=False, msg="Missing db2api parameters")
 

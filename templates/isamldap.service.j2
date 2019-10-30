@@ -7,10 +7,13 @@ After=local-fs.target network-online.target
 [Service]
 Type=forking
 GuessMainPID=no
-PIDFile={{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/tmp/slapd.pid
+#PIDFile={{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/tmp/slapd.pid
+
+KillMode=none
 ExecStart={{ldap_home}}/sbin/ibmslapd -I {{isamldap_instance_name}} -n
 ExecStop={{ldap_home}}/sbin/ibmslapd -I {{isamldap_instance_name}} -k
-ExecStop=/usr/bin/su -c ". ~{{isamldap_instance_name}}/sqllib/db2profile; db2stop force" -l {{isamldap_instance_name}}
+
+#ExecStop=/usr/bin/su -c ". ~{{isamldap_instance_name}}/sqllib/db2profile; db2stop force" -l {{isamldap_instance_name}}
 
 [Install]
 WantedBy=default.target

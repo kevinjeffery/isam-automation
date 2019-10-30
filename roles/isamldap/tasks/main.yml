@@ -1,6 +1,6 @@
 ---
 # roles/isamldap/tasks/main.yml
-# @version 2.01_2019-07-05
+# @version 2.02_2019-07-12
 # @author Kevin Jeffery
 
 # ISAM LDAP Instance Creation
@@ -8,12 +8,16 @@
 
 # ISAM LDAP Instance Configuration
 - include_tasks: isamldap_instance_cfg.yml
+  when: isamldap_config_ldif is not defined
+
+- include_tasks: isamldap_instance_ldif.yml
+  when: isamldap_config_ldif is defined
 
 - name: Get Config
   tdsinstance:
     instance: "{{isamldap_instance_name}}"
     action: get_config
-  become: yes
+  become: "yes"
   register: get_config
 
 - name: Config info
