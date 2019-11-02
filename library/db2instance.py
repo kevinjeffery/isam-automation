@@ -158,7 +158,7 @@ class DB2Instance:
     return {'name':name,'value':value}
 
   def _instance_up(self):
-    rc, stdout, stderr = self._db2_command("ps -ef | grep $DB2INSTANCE | grep db2sysc | grep -v grep | wc -l", "Could not validade if instance is up")
+    stdout = self._db2_command("ps -ef | grep $DB2INSTANCE | grep db2sysc | grep -v grep | wc -l", "Could not validade if instance is up")[1]
     return '1' == stdout.strip()
 
   def _find_db2_profile(self):
@@ -189,7 +189,7 @@ class DB2Instance:
     return rc, stdout, stderr
     
   def _get_dbm_cfg_items(self):
-    rc, stdout, stderr = self._db2_command("db2 get dbm cfg", "Error, could not get DBM config")
+    stdout = self._db2_command("db2 get dbm cfg", "Error, could not get DBM config")[1]
     config_items = []
     config_info=stdout.split('\n')
     for config_line in config_info:
@@ -201,7 +201,7 @@ class DB2Instance:
     return config_items  
 
   def _getenv_items(self):
-    rc, stdout, stderr = self._db2_command("db2set", "Error, could not get DB2 Settings")
+    stdout = self._db2_command("db2set", "Error, could not get DB2 Settings")[1]
     config_info=stdout.split('\n')
     config_items = []
     for config_line in config_info:
