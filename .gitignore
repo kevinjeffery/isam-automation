@@ -90,6 +90,7 @@ ENV/
 env.bak/
 venv.bak/
 inventory/*-lab.yml
+playbooks/*-test.yml
 
 # Spyder project settings
 .spyderproject
