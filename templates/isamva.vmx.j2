@@ -36,19 +36,19 @@ sata0:0.deviceType = "cdrom-image"
 sata0:0.fileName = "{{BS_appliance_iso}}"
 floppy0.present = "FALSE"
 ethernet0.present = "TRUE"
-ethernet0.networkName = "{{hostvars[item.host_name]['vmware_networks'][0]['name']}}"
-ethernet0.virtualDev = "{{hostvars[item.host_name]['vmware_networks'][0]['device_type']}}"
+ethernet0.networkName = "{{item['vmware_networks'][0]['networkName']}}"
+ethernet0.virtualDev = "{{item['vmware_networks'][0]['virtualDev'] | default('vmxnet3')}}"
 ethernet0.addressType = "generated"
-{%if hostvars[item.host_name]['vmware_networks'][1] is defined %}
+{%if item['vmware_networks'][1] is defined %}
 ethernet1.present = "TRUE"
-ethernet1.networkName = "{{hostvars[item.host_name]['vmware_networks'][1]['name']}}"
-ethernet1.virtualDev = "{{hostvars[item.host_name]['vmware_networks'][1]['device_type']}}"
+ethernet1.networkName = "{{item['vmware_networks'][1]['networkName']}}"
+ethernet1.virtualDev = "{{item['vmware_networks'][1]['virtualDev'] | default('vmxnet3')}}"
 ethernet1.addressType = "generated"
 {%endif %}
-{%if hostvars[item.host_name]['vmware_networks'][2] is defined %}
+{%if item['vmware_networks'][2] is defined %}
 ethernet2.present = "TRUE"
-ethernet2.networkName = "{{hostvars[item.host_name]['vmware_networks'][2]['name']}}"
-ethernet2.virtualDev = "{{hostvars[item.host_name]['vmware_networks'][2]['device_type']}}"
+ethernet2.networkName = "{{item['vmware_networks'][2]['networkName']}}"
+ethernet2.virtualDev = "{{item['vmware_networks'][2]['virtualDev'] | default('vmxnet3')}}"
 ethernet2.addressType = "generated"
 {%endif %}
 scsi0:0.present = "TRUE"
