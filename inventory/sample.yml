@@ -2,8 +2,27 @@ all:
   hosts:
     localhost:
     datatier.sample.com:
-
+    esxi.sample.com:
+      vcenter_username: "{{ansible_user}}"
+      vcenter_password: "{{ansible_ssh_pass}}"
+      vcenter_datacenter: "ha-datacenter"
+      vmware_folder: "/ha-datacenter/vm"
+      vmware_iso_datastore: "datastore1"
+      vmware_iso_path: "iso"
+      isamva_iso: "isam_9.0.4.0_20171201-2325.iso"
+      isamva_list:
+      - vm_name: isamva01
+        host_name: isamva01.sample.com
+        datastore: datastore1
+        networks:
+        - networkName: "VM Network"
+          virtualDev: "vmxnet3"
+        hdd_size: 40
+        ram_size: 4096
   children:
+    esxi:
+      hosts:
+        esxi.sample.com:
     ansible:
       hosts:
         localhost:

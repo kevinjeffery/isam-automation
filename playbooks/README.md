@@ -21,7 +21,25 @@ This playbook is responsible for installation of the ISDS software, fixpack and 
 ## isamldap_instance.yml
 This playbook automates the configuration of the ISAM ISDS instance with most command line options supported.
 
+## esxi_isamva.yml
+This playbook automates provisioning of the ISAM Virtual Appliance on ESXi standalone.  Tested on ESXi v6.5.  The playbook expects the ESXi server to be in the esxi hosts group and have ssh connectivity enabled (the free license only has a readonly rest API).
+See the sample.yml inventory file for the variables used in the play.  Up to three network interfaces supported by the template file.
+
+### esxi_isamva_template.yml
+This tasks file is called for each item in the isamva_list variable to create the autoconfig metadata file, the autoconfig ISO image and the VM vmx file.  All ISO image files are copied to the ESXi server along with the ISAM Firmware ISO image.
+
+### esxi_isamva_provision.yml
+This tasks file is called for each item in the isamva_list variable to create the VM directory, transfer the vmx file, create the virtual disk, register the VM and power it on to install the firmware.  There is a three minute delay at the end of the file to allow the firmware installation to complete and power off.
+
+### esxi_isamva_autoconfig.yml
+This tasks file is called for each item in the isamva_list variable to swap the ISAM firmware ISO for the autoconfig ISO on a powered off VM.  If the VM is powered off AND the image is swapped, the VM is powered back on to apply the configuration.
+
 Credits
 ---------------------
 The initial idea for the ISDS installation and configuration came from work done by Bernardo Vale.
 https://github.com/bernardoVale/ansible-role-db2
+
+The initial idea for the ESXi Standalone automation came from the bootstrap_local role in the IBM Security Ansible Roles for ISAM.
+https://github.com/IBM-Security/isam-ansible-roles/tree/master/bootstrap_local
+
+
