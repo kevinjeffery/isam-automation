@@ -5,6 +5,7 @@
 
 - name: VMWare Prep for ISAM Appliances
   hosts: esxi
+  gather_facts: false
   tasks:
   - name: Check if the ISAM ISO image exists
     vsphere_file:
