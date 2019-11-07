@@ -1,0 +1,64 @@
+---
+# playbooks/esxi_isamva_provision.yml
+# @version v1.00_2019-NOV-07
+# @author Kevin Jeffery
+- name: ISAMVA Provision **** {{item.vm_name}}
+  debug:
+    var: item.host_name
+
+- name: Create directory on datastore
+  file:
+    state: "directory"
+    path: "/vmfs/volumes/{{item.datastore}}/{{item.vm_name}}"
+  register: vm_create
+
+- name: Deploy the VMX file
+  vsphere_copy:
+    hostname: '{{ inventory_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    datacenter: "{{ vcenter_datacenter }}"
+    datastore: "{{item.datastore}}"
+    src: "{{inventory_dir}}/isamva/{{item.vm_name}}/{{item.vm_name}}.vmx"
+    path: "{{item.vm_name}}/{{item.vm_name}}.vmx"
+    validate_certs: no
+  delegate_to: localhost
+  when: vm_create.changed
+
+- name: Create the VM hard disk
+  command: "/bin/vmkfstools -c {{item['hdd_size'] | default(50)}}G -a lsilogic /vmfs/volumes/{{item.datastore}}/{{item.vm_name}}/{{item.vm_name}}.vmdk"
+  when: vm_create.changed
+  register: ret_vmkfstools
+
+- name: vmkfstools Output
+  debug: 
+    var: ret_vmkfstools.stdout
+    verbosity: 3
+  when: vm_create.changed
+
+- name: Register the VM
+  command: "/bin/vim-cmd solo/registervm /vmfs/volumes/{{item.datastore}}/{{item.vm_name}}/{{item.vm_name}}.vmx"
+  when: vm_create.changed
+  register: ret_register
+
+- name: Register Output
+  debug:
+    var: ret_register.stdout
+    verbosity: 3
+  when: vm_create.changed
+
+- name: Start the VM
+  command: "/bin/vim-cmd vmsvc/power.on {{ret_register.stdout}}"
+  when: vm_create.changed
+  register: ret_start
+
+- name: Start Output
+  debug:
+    var: ret_start.stdout
+    verbosity: 3
+  when: vm_create.changed
+
+- name: Delay 3 minutes
+  pause:
+    minutes: 3
+  when: vm_create.changed

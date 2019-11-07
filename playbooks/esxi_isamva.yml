@@ -1,0 +1,48 @@
+---
+# playbooks/esxi_isamva.yml
+# @version v1.00_2019-NOV-07
+# @author Kevin Jeffery
+
+- name: VMWare Prep for ISAM Appliances
+  hosts: esxi
+  tasks:
+  - name: Check if the ISAM ISO image exists
+    vsphere_file:
+      hostname: '{{ inventory_hostname }}'
+      username: '{{ vcenter_username }}'
+      password: '{{ vcenter_password }}'
+      datacenter: "{{ vcenter_datacenter }}"
+      datastore: "{{vmware_iso_datastore}}"
+      path: "{{vmware_iso_path}}/{{isamva_iso}}"
+      state: "touch"
+      validate_certs: no
+    register: ret_iso
+    delegate_to: localhost
+
+  - name: Deploy the ISAM ISO image
+    vsphere_copy:
+      hostname: '{{ inventory_hostname }}'
+      username: '{{ vcenter_username }}'
+      password: '{{ vcenter_password }}'
+      src: "{{software_src_dir}}/{{isamva_iso}}"
+      datacenter: "{{vcenter_datacenter}}"
+      datastore: "{{vmware_iso_datastore}}"
+      path: "{{vmware_iso_path}}/{{isamva_iso}}"
+      validate_certs: no
+    when: ret_iso.changed
+    delegate_to: localhost
+
+  - name: Build ISAM VA Templates and Autoconfigure ISO images
+    include_tasks: esxi_isamva_template.yml
+    loop: "{{isamva_list}}"
+    when: isamva_list is defined
+
+  - name: Build ISAM VA VMs
+    include_tasks: esxi_isamva_provision.yml
+    loop: "{{isamva_list}}"
+    when: isamva_list is defined
+
+  - name: Autoconfigure ISAM VA VMs
+    include_tasks: esxi_isamva_autoconfig.yml
+    loop: "{{isamva_list}}"
+    when: isamva_list is defined
