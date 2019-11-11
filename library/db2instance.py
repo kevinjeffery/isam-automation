@@ -111,7 +111,7 @@ class DB2Instance:
     if self._check_cfg("db2set",name,value):
       self.module.exit_json(changed=False, msg=cmd + " OK")
     rc, stdout, stderr = self._db2_command(cmd, cmd + " Failed")
-    rc, stdout, stderr = self.module.exit_json(change=True, msg=cmd + " Success", rc=rc, stdout=stdout, stderr=stderr)
+    rc, stdout, stderr = self.module.exit_json(changed=True, msg=cmd + " Success", rc=rc, stdout=stdout, stderr=stderr)
 
   def _check_cfg(self, fact_name, item_name, item_value=None):
     if fact_name in self.facts:
