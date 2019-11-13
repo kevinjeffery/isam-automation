@@ -92,7 +92,7 @@ venv.bak/
 inventory/*-lab.yml
 playbooks/*-test.yml
 *.vmx
-
+test*.json
 
 # Spyder project settings
 .spyderproject
