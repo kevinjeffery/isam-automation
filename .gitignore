@@ -94,6 +94,7 @@ playbooks/*-test.yml
 library/*-test.py
 *.vmx
 test*.json
+.vault_pass
 
 # Spyder project settings
 .spyderproject
