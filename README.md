@@ -9,10 +9,12 @@ Ansible automation for IBM Security Access Manager
 * [Ansible module to manage VMs on a stand-alone ESXi host](#ESXi Module)
 
 ## Ansible Control Server
-The inventory and playbooks to support building an Ansible control server on an existing CentOS 7 server and install packages and roles required for the IBM Security Python Library and Ansible Roles
+The inventory and playbooks to support building an Ansible control server on an existing CentOS 7 server and install packages and roles required for the IBM Security Python Library and Ansible Roles.
+
 [Ansible control server](https://techlink.microknight.com/2019/06/23/ansible-control-system-for-isam/)
 
 ## ESXi Module
-Ansible module for creating and controlling VMs on Stand-Alone ESXI
+Ansible module for creating and controlling VMs on Stand-Alone ESXI.
+
 [Ansible ESXi Module](https://techlink.microknight.com/2019/11/19/ansible-esxi-module/)
 

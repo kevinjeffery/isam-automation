@@ -71,7 +71,7 @@
   vars:
     BS_vm_hostname:  "{{ item['vm_name'] }}"
     BS_vm_cpu_count: "{{ item['cpu_count'] | default(2) }}"
-    BS_vm_ram_size:  "{{ item['ram_size']  | default(4096) }}"
+    BS_vm_ram_size:  "{{ item['mem_size']  | default(4096) }}"
     BS_vm_hdd_size:  "{{ item['hdd_size']  | default(50) }}"
     BS_vm_networks:  "{{ item['networks'] }}"
     BS_appliance_iso: "/vmfs/volumes/{{vmware_iso_datastore}}/{{vmware_iso_path}}/{{isamva_iso}}"

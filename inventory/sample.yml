@@ -1,28 +1,85 @@
+---
+# inventory/sample.yml
+# @version 1.03_2019-NOV-23
+# @author Kevin Jeffery
+
 all:
   hosts:
     localhost:
     datatier.sample.com:
+      ansible_user: ansible
+      ansible_ssh_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          36333433663039353938383362336235636230383361383833356436666562383235616637303531
+          3235326362623435363933623766303262373432313362380a363533613966626132353130356466
+          36666134646666613531666334636335396165626234356139666234663661366261646462333431
+          6163636461663637360a353766633534323763346665656432643334356134373335326533343661
+          3438
+      host_name: datatier.sample.com
+      ip_address: "192.168.42.100"
+      ip_gateway: "192.168.42.2"
+      ip_netmask: "255.255.255.0"
     esxi.sample.com:
+      ansible_user: root
+      ansible_ssh_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          36333433663039353938383362336235636230383361383833356436666562383235616637303531
+          3235326362623435363933623766303262373432313362380a363533613966626132353130356466
+          36666134646666613531666334636335396165626234356139666234663661366261646462333431
+          6163636461663637360a353766633534323763346665656432643334356134373335326533343661
+          3438
       vcenter_username: "{{ansible_user}}"
       vcenter_password: "{{ansible_ssh_pass}}"
       vcenter_datacenter: "ha-datacenter"
       vmware_folder: "/ha-datacenter/vm"
       vmware_iso_datastore: "datastore1"
       vmware_iso_path: "iso"
-      isamva_iso: "isam_9.0.4.0_20171201-2325.iso"
+      centos7_list:
+      - vm_name: datatier
+        host_name: datatier.sample.com
+        datastore: datastore1
+        networks:
+        - networkName: "VM Network"
+          virtualDev: "vmxnet3"
+        hdd_size: 40
       isamva_list:
-      - vm_name: isamva01
-        host_name: isamva01.sample.com
+      - vm_name: isamva1
+        host_name: isamva1.sample.com
         datastore: datastore1
         networks:
         - networkName: "VM Network"
           virtualDev: "vmxnet3"
         hdd_size: 40
         ram_size: 4096
+      - vm_name: isamva2
+        host_name: isamva2.sample.com
+        datastore: datastore1
+        networks:
+          virtualDev: "vmxnet3"
+        hdd_size: 40
+        ram_size: 4096
+    isamva1.sample.com:
+      host_name: "isamva1.sample.com"
+      ip_address: "192.168.42.101"
+      ip_gateway: "192.168.42.2"
+      ip_netmask: "255.255.255.0"
+    isamva2.sample.com:
+      host_name: "isamva2.sample.com"
+      ip_address: "192.168.42.201"
+      ip_gateway: "192.168.42.2"
+      ip_netmask: "255.255.255.0"
   children:
+    isamva:
+      hosts:
+        isamva1.sample.com:
+        isamva2.sample.com:
     esxi:
       hosts:
         esxi.sample.com:
+      vars:
+        ansible_python_interpreter: "/bin/python"
+        isamva_iso: "isam_9.0.4.0_20171201-2325.iso"
+        centos7_iso: "CentOS-7-x86_64-Minimal-1810.iso"
     ansible:
       hosts:
         localhost:
