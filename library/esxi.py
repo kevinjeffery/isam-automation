@@ -337,10 +337,13 @@ def main():
         vm_mem_size=dict(required=False, type='int'),
         vm_cpu_count=dict(required=False, type='str'),
         vm_guest_os=dict(required=False, type='str', choices=[
-            'centos7-64',
-            'other3xlinux-64',
-            'other26xlinux-64',
-            'other'
+            'centos-64', # CentOS 4/5/6/7 (64-bit) 5.5.0
+            'centos7-64', # CentOS 7 (64-bit) - 6.5.0
+            'other3xlinux-64', # Other 3.x Linux (64-bit) 6.5.0
+            'other26xlinux-64', # Other 2.6 Linux (64-bit)
+            'other', #
+            'ubuntu-64', # Ubuntu Linux (64-bit) 5.5.0
+            'windows8srv-64' # Microsoft Windows Server 2008,2012 (64-bit)
         ]),
         vm_scsi_type=dict(require=False, type='str', choices=['buslogic', 'lsilogic', 'pvscsi']),
         vm_iso_image=dict(required=False, type='str'),
