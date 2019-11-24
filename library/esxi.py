@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # library/esxi.py
-# @version v1.01_2019-NOV-17
+# @version v1.02_2019-NOV-24
 # @author Kevin Jeffery
 
 import sys
@@ -36,6 +36,7 @@ class ESXi:
         self.action = self.module.params['action']
         self.vm_name = self.module.params['vm_name']
         self.vm_datastore  = self.module.params['vm_datastore']
+        self.vm_resource_pool = self.module.params['vm_resource_pool']
         self.vm_networks   = self.module.params['vm_networks']
         self.vm_hdd_size   = self.module.params['vm_hdd_size']
         self.vm_mem_size   = self.module.params['vm_mem_size']
@@ -332,6 +333,7 @@ def main():
         action=dict(required=True),
         vm_name=dict(required=False, type='str'),
         vm_datastore=dict(required=False, type='str'),
+        vm_resource_pool=dict(required=False, type='str'),
         vm_networks=dict(required=False, type='list'),
         vm_hdd_size=dict(required=False, type='int'),
         vm_mem_size=dict(required=False, type='int'),
@@ -392,6 +394,7 @@ def main():
         esxi_inst.create_vm(
             esxi_inst.vm_name,
             esxi_inst.vm_datastore,
+            vm_resource_pool=esxi_inst.vm_resource_pool,
             vm_hdd_size=esxi_inst.vm_hdd_size,
             vm_mem_size=esxi_inst.vm_mem_size,
             vm_guest_os=esxi_inst.vm_guest_os,
