@@ -10,3 +10,4 @@ package_manager_enabled: True
 
 useful_packages:
 - "unzip"
+- "open-vm-tools"

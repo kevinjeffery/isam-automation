@@ -1,6 +1,6 @@
 ---
 # playbooks/ansible_control_4_isam.yml
-# @version 1.02_2019-07-05
+# @version 1.03_2019-12-04
 # @author Kevin Jeffery
 #
 - name: Build out the Ansible Control system for ISAM
@@ -9,7 +9,7 @@
   tasks:
   - name: Install some useful packages - RedHat
     yum:
-      name: "{{useful_packages}}"
+      name: "{{ useful_packages }}"
       state: "latest"
       update_cache: "yes"
     become: "yes"
@@ -17,7 +17,7 @@
 
   - name: Install some useful packages - Debian
     apt:
-      name: "{{useful_packages}}"
+      name: "{{ useful_packages }}"
       state: "installed"
       update_cache: "yes"
     become: "yes"
@@ -69,3 +69,19 @@
 
   - name: Install/Update ISAM Ansible Roles
     command: ansible-galaxy install git+https://github.com/ibm-security/isam-ansible-roles.git,master --roles-path {{roles_path|quote}} --force
+
+  - name: Install genisoimage - RedHat
+    yum:
+      name: "genisoimage"
+      state: "latest"
+      update_cache: "yes"
+    become: "yes"
+    when: ansible_os_family == "RedHat"
+
+  - name: Install genisoimage - Debian
+    apt:
+      name: "genisoimage"
+      state: "installed"
+      update_cache: "yes"
+    become: "yes"
+    when: ansible_os_family == "Debian"
