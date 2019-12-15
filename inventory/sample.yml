@@ -1,6 +1,6 @@
 ---
 # inventory/sample.yml
-# @version 1.03_2019-NOV-23
+# @version 1.04_2019-DEC-04
 # @author Kevin Jeffery
 
 all:
@@ -116,7 +116,7 @@ all:
         db2_highcapacity_enabled: "true"
         tds_install_fixpack_version: "6.4.0.18"
         tds_install_fixpack_suffix: "IF0018"
-        tds_install_db2_version: "{{db2_install_version}}"
+        tds_install_db2_version: "{{ db2_install_version }}"
     isamldap_servers:
       hosts:
         datatier.sample.com:

@@ -62,7 +62,7 @@ class ESXi:
             self.module.fail_json(changed=False, msg="Error, VM not found")
         self.module.exit_json(changed=False, data=ret_data)
 
-    def create_vm(self, vm_name, vm_datastore, vm_guest_os=None, vm_mem_size=None, vm_hdd_size='8', vm_resource_pool='',
+    def create_vm(self, vm_name, vm_datastore, vm_guest_os=None, vm_mem_size=None, vm_hdd_size='8', vm_resource_pool=None,
                     vm_cpu_count=None, vm_scsi_type=None, vm_networks=None, vm_iso_image=None, vm_iso_image2=None):
         self.module.debug("*** Create VM {0}".format(vm_name))
         vm_info = self._search(vm_name)
@@ -81,7 +81,13 @@ class ESXi:
         self._process_vmx_file(vm_name, vm_datastore, vm_guest_os=vm_guest_os, vm_mem_size=vm_mem_size, vm_hdd_size=vm_hdd_size,
             vm_cpu_count=vm_cpu_count, vm_scsi_type=vm_scsi_type, vm_networks=vm_networks, vm_iso_image=vm_iso_image, vm_iso_image2=vm_iso_image2, vm_create=True)
         # register the vm
-        stdout = self._esxi_command(self.vmsvc_solo_registervm.format(vm_name, vm_datastore, vm_resource_pool), "Error, registervm failed: {0}".format(vm_name))[1]
+        pool_id = ''
+        if vm_resource_pool is not None and self._version_compare('6.5') < 0:
+            pool_id = self._get_pool_id(vm_resource_pool)
+            cmd = self.vmsvc_solo_registervm.format(vm_name, vm_datastore, pool_id)
+        else:
+            cmd = self.vmsvc_solo_registervm.format(vm_name, vm_datastore, '')
+        stdout = self._esxi_command(cmd, "Error, registervm: {0} {1}".format(vm_name, pool_id))[1]
         vmid = stdout.split('\n')[0]
         self.module.exit_json(changed=True, data=vmid)
 
@@ -145,6 +151,15 @@ class ESXi:
                 return 'poweredOff'
         return ret_val
 
+    def _get_pool_id(self, pool_name):
+        # http://www.vi-toolkit.com/wiki/index.php/Hostsvc/rsrc/pools_get
+        cmd = "cat /etc/vmware/hostd/pools.xml | grep \"{0}\" -A1 | grep \"<objID>\" | sed 's/<objID>//;s/<\/objID>//g' | sed -e 's/^blank:*//;s/blank:*$//'".format(pool_name)
+        stdout = self._esxi_command(cmd, "Error, cannot get poolid: {0}".format(pool_name))[1]
+        info_lines = stdout.split('\n')
+        return info_lines[0].strip()
+
+
+    
     def _get_tools_status(self, vmid):
         ret_val = "unknown"
         stdout = self._esxi_command(self.vmsvc_get_summary.format(vmid) + " | grep toolsStatus", "Error, cannot get tools status: {0}".format(vmid))[1]
