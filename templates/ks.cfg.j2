@@ -1,0 +1,67 @@
+#version=DEVEL
+# System authorization information
+auth --enableshadow --passalgo=sha512
+# Use CDROM installation media
+cdrom
+# Use non-interactive command line mode
+cmdline
+# Run the Setup Agent on first boot
+firstboot --enable
+ignoredisk --only-use=sda
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+
+# Network information
+# network  --bootproto=static --device=ens160 --gateway={{ KS_ip_gateway }} --ip={{ KS_ip_address }} --nameserver={{ KS_dns_server }} --netmask={{ KS_ip_netmask }} --ipv6=auto --activate
+network  --bootproto=static --gateway={{ KS_ip_gateway }} --ip={{ KS_ip_address }} --nameserver={{ KS_dns_server }} --netmask={{ KS_ip_netmask }} --ipv6=auto --activate
+network  --hostname={{ KS_hostname }}
+
+# Root password
+rootpw --iscrypted {{ KS_root_password | password_hash('sha512', 65534 | random(seed=KS_hostname) | string) }}
+
+# System services
+services --enabled="chronyd"
+# System timezone
+timezone America/New_York --isUtc
+{%if KS_ansible_user is defined and KS_ansible_password is defined %}
+user --groups=wheel --name={{ KS_ansible_user }} --password={{ KS_ansible_password | password_hash('sha512', 65534 | random(seed=KS_hostname) | string) }} --iscrypted --gecos="Ansible Functional User"
+{%endif %}
+
+# System bootloader configuration
+bootloader --append=" crashkernel=auto" --location=mbr --boot-drive=sda
+autopart --type=lvm
+# Partition clearing information
+clearpart --none --initlabel
+
+
+%packages
+@^minimal
+@core
+chrony
+kexec-tools
+
+%end
+
+%addon com_redhat_kdump --enable --reserve-mb='auto'
+
+%end
+
+%anaconda
+pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
+pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+%end
+
+#Post Install
+%post --log=/root/ks-post.log
+yum install -y epel-release
+yum install -y open-vm-tools
+{%if KS_ansible_group is defined %}
+echo '%{{ KS_ansible_group }} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+{%endif %}
+%end
+
+eula --agreed
+reboot
