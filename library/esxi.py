@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # library/esxi.py
-# @version v1.02_2019-NOV-24
+# @version v1.04_2020-AUG-02
 # @author Kevin Jeffery
 
 import sys
@@ -21,31 +21,40 @@ class ESXi:
         self.vmsvc_power_off = '/bin/vim-cmd vmsvc/power.off {0}' # vm_id
         self.vmsvc_power_shutdown = '/bin/vim-cmd vmsvc/power.shutdown {0}' # vm_id
         self.vmsvc_power_reboot = '/bin/vim-cmd vmsvc/power.reboot {0}' # vm_id
+        self.vmsvc_get_filelayout = ' /bin/vim-cmd vmsvc/get.filelayout {0}' # vmid
         self.vmsvc_get_summary = '/bin/vim-cmd vmsvc/get.summary {0}' # vm_id
+        self.vmsvc_get_snapshotinfo = '/bin/vim-cmd vmsvc/get.snapshotinfo {0}' # vm_id
         self.vmsvc_createdummyvm = '/bin/vim-cmd vmsvc/createdummyvm {0} [{1}]' # vm_name vm_datastore
         self.vmsvc_unregister = '/bin/vim-cmd vmsvc/unregister {0}' # vm_id
         self.vmsvc_solo_registervm = '/bin/vim-cmd solo/registervm /vmfs/volumes/{1}/{0}/{0}.vmx {0} {2}' # vm_name vm_datastore [resourcepool(optional)]
-        self.vmkfstools_delete = '/bin/vmkfstools -U /vmfs/volumes/{1}/{0}/{0}.vmdk' # vm_name  vm_datastore
+        self.vmsvc_snapshot_create = '/bin/vim-cmd vmsvc/snapshot.create {0} {1}' # vmid snapshot_name
+        self.vmsvc_snapshot_get = '/bin/vim-cmd vmsvc/snapshot.get {0}' # vm_id
+        self.vmsvc_snapshot_removeall = '/bin/vim-cmd vmsvc/snapshot.removeall {0}' # vmid
+        self.vmkfstools_delete = '/bin/vmkfstools -U /vmfs/volumes/{1}/{0}/{0}.vmdk' # vm_name vm_datastore
         self.vmkfstools_create = '/bin/vmkfstools -c {2}G /vmfs/volumes/{1}/{0}/{0}.vmdk' # vm_name vm_datastore vm_hdd_size
+        self.vmkfstools_clone = '/sbin/vmkfstools -d thin -i "{0}" "{1}"' # vmdk_src vmdk_dest
         self.esxcli = 'esxcli --formatter=keyvalue {0} {1} {2}'
 
     def parse_params(self):
         self.module.debug("*** Process all Arguments")
-        self.logLevel = self.module.params['log']
-        self.force = self.module.params['force']
-        self.action = self.module.params['action']
-        self.vm_name = self.module.params['vm_name']
-        self.vm_datastore  = self.module.params['vm_datastore']
-        self.vm_resource_pool = self.module.params['vm_resource_pool']
-        self.vm_networks   = self.module.params['vm_networks']
-        self.vm_hdd_size   = self.module.params['vm_hdd_size']
-        self.vm_mem_size   = self.module.params['vm_mem_size']
-        self.vm_cpu_count  = self.module.params['vm_cpu_count']
-        self.vm_guest_os   = self.module.params['vm_guest_os']
-        self.vm_scsi_type  = self.module.params['vm_scsi_type']
-        self.vm_iso_image  = self.module.params['vm_iso_image']
-        self.vm_iso_image2 = self.module.params['vm_iso_image2']
-        self.facts['version'] = self._get_version()
+        self.logLevel           = self.module.params['log']
+        self.force              = self.module.params['force']
+        self.action             = self.module.params['action']
+        self.vm_name            = self.module.params['vm_name']
+        self.vm_datastore       = self.module.params['vm_datastore']
+        self.vm_resource_pool   = self.module.params['vm_resource_pool']
+        self.vm_networks        = self.module.params['vm_networks']
+        self.vm_hdd_size        = self.module.params['vm_hdd_size']
+        self.vm_mem_size        = self.module.params['vm_mem_size']
+        self.vm_cpu_count       = self.module.params['vm_cpu_count']
+        self.vm_guest_os        = self.module.params['vm_guest_os']
+        self.vm_scsi_type       = self.module.params['vm_scsi_type']
+        self.vm_iso_image       = self.module.params['vm_iso_image']
+        self.vm_iso_image2      = self.module.params['vm_iso_image2']
+        self.snapshot           = self.module.params['snapshot']
+        self.vmdk_src           = self.module.params['vmdk_src']
+        self.vmdk_dest          = self.module.params['vmdk_dest']
+        self.facts['version']   = self._get_version()
 
     def get_version(self):
         self.module.exit_json(changed=False, data=self.facts['version'])
@@ -56,11 +65,56 @@ class ESXi:
     def get_vm(self, vm_name):
         ret_data = self._search(vm_name)
         if ret_data:
-            ret_data['state'] = self._get_vm_state(ret_data['vmid'])
-            ret_data['toolsStatus'] = self._get_tools_status(ret_data['vmid'])
+            vm_summary = self._get_vm_summary(ret_data['vmid'])
+            ret_data['state'] = vm_summary['runtime']['powerState']
+            ret_data['toolsStatus'] = vm_summary['guest']['toolsStatus']
+            ret_data['config'] = vm_summary['config']
+            vm_filelayout = self._get_vm_filelayout(ret_data['vmid'])
+            ret_data['configFiles'] = vm_filelayout['configFile']
+            disk_files = []
+            for disk_item in vm_filelayout['disk']:
+                for file_spec in disk_item['diskFile']:
+                    disk_files.append(file_spec.split('/')[1])
+            ret_data['diskFiles'] = disk_files
         else:
             self.module.fail_json(changed=False, msg="Error, VM not found")
         self.module.exit_json(changed=False, data=ret_data)
+
+    def get_vm_summary(self, vm_name):
+        ret_data = self._search(vm_name)
+        if ret_data:
+            ret_data = self._get_vm_summary(ret_data['vmid'])
+        else:
+            self.module.fail_json(changed=False, msg="Error, VM not found")
+        self.module.exit_json(changed=False, data=ret_data)
+
+    def get_vm_snapshots(self, vm_name):
+        ret_data = self._search(vm_name)
+        if ret_data:
+            ret_data = self._get_vm_snapshots(ret_data['vmid'])
+        else:
+            self.module.fail_json(changed=False, msg="Error, VM not found")
+        self.module.exit_json(changed=False, data=ret_data)
+
+    def vm_snapshot_create(self, vm_name, snapshot='snapshot1'):
+        ret_data = self._search(vm_name)
+        if ret_data:
+            stdout = self._esxi_command(self.vmsvc_snapshot_create.format(ret_data['vmid'], snapshot), "Error, could not create snapshot")[1]
+        else:
+            self.module.fail_json(changed=False, msg="Error, VM not found")
+        self.module.exit_json(changed=True, stdout=stdout)
+
+    def vm_snapshot_removeall(self, vm_name):
+        ret_data = self._search(vm_name)
+        if ret_data:
+            stdout = self._esxi_command(self.vmsvc_snapshot_removeall.format(ret_data['vmid']), "Error, could not remove snapshot")[1]
+        else:
+            self.module.fail_json(changed=False, msg="Error, VM not found")
+        self.module.exit_json(changed=True, stdout=stdout)
+    
+    def vmdk_clone(self, vmdk_src, vmdk_dest):
+        stdout = self._esxi_command(self.vmkfstools_clone.format(vmdk_src,vmdk_dest), "Error, disk clone failed: {0} {1}".format(vmdk_src, vmdk_dest))[1]
+        self.module.exit_json(changed=True, stdout=stdout)
 
     def create_vm(self, vm_name, vm_datastore, vm_guest_os=None, vm_mem_size=None, vm_hdd_size='8', vm_resource_pool=None,
                     vm_cpu_count=None, vm_scsi_type=None, vm_networks=None, vm_iso_image=None, vm_iso_image2=None):
@@ -95,13 +149,12 @@ class ESXi:
         changed = False
         ret_data = self._search(vm_name)
         if ret_data:
-            vmid = ret_data['vmid']
-            if self._get_vm_state(vmid) != 'poweredOff':
-                self.module.exit_json(changed=False, warnings=['VM not poweredOff'], data=vmid)
+            if self._get_vm_state(ret_data['vmid']) != 'poweredOff':
+                self.module.exit_json(changed=False, warnings=['VM not poweredOff'], data=ret_data['vmid'])
         else:
             self.module.fail_json(changed=False, msg="Error, VM not found: {0}".format(vm_name))
         changed = self._process_vmx_file(vm_name, vm_datastore, vm_mem_size=vm_mem_size, vm_networks=vm_networks, vm_iso_image=vm_iso_image)
-        self.module.exit_json(changed=changed, data=vmid)        
+        self.module.exit_json(changed=changed, data=ret_data['vmid'])        
 
     def set_state(self, vm_name, new_state):
         ret_data = self._search(vm_name)
@@ -158,8 +211,6 @@ class ESXi:
         info_lines = stdout.split('\n')
         return info_lines[0].strip()
 
-
-    
     def _get_tools_status(self, vmid):
         ret_val = "unknown"
         stdout = self._esxi_command(self.vmsvc_get_summary.format(vmid) + " | grep toolsStatus", "Error, cannot get tools status: {0}".format(vmid))[1]
@@ -250,6 +301,34 @@ class ESXi:
             self.module.fail_json(changed=True, msg=str(err))
         return changed
 
+    def _load_properties(self, filepath, sep='=', comment_char='#'):
+        """
+        Read the file passed as parameter as a properties file.
+        """
+        props = {}
+        try:
+            with open(filepath, "rt") as f:
+                for line in f:
+                    key, value = self._process_properties_line(line, sep, comment_char)
+                    if key:
+                        props[key] = value
+            f.close()
+        except OSError as err:
+            if f:
+                f.close()
+            self.module.fail_json(changed=True, msg=str(err))
+        return props
+
+    def _process_properties_line(self, line, sep='=', comment_char='#'):
+        l = line.strip()
+        key = None
+        value = None
+        if l and not l.startswith(comment_char):
+            key_value = l.split(sep)
+            key = key_value[0].strip()
+            value = sep.join(key_value[1:]).strip().strip('"')
+        return key, value
+
     def _process_keyvalue_line(self, line, label_delimiter=None, label_index=None):
         try:
             key, value = line.split("=")
@@ -262,6 +341,72 @@ class ESXi:
             return {'name': items[label_index], 'value': value}
         except:
             return None
+
+    def _get_vm_summary(self, vmid):
+        stdout = self._esxi_command(self.vmsvc_get_summary.format(vmid), "Error, cannot get summary {0}".format(vmid))[1]
+        return self._parse_vim_cmd_as_json(stdout)
+    
+    def _get_vm_snapshots(self, vmid):
+        stdout = self._esxi_command(self.vmsvc_get_snapshotinfo.format(vmid), "Error, cannot get snapshots {0}".format(vmid))[1]
+        return self._parse_vim_cmd_as_json(stdout)
+
+    def _get_vm_filelayout(self, vmid):
+        stdout = self._esxi_command(self.vmsvc_get_filelayout.format(vmid), "Error, cannot get file layout {0}".format(vmid))[1]
+        return self._parse_vim_cmd_as_json(stdout)
+
+    def _parse_vim_cmd_as_json(self, stdout):
+        stdout = stdout.replace('<unset>', 'null')
+        stdout = stdout.replace('(vmodl.MethodFault)', '')
+        not_fault = True
+        if '(vim.fault.NotFound)' in stdout:
+            not_fault = False
+            stdout = stdout.replace('(vim.fault.NotFound)', '')
+        if not_fault:
+            stdout = stdout.replace('(string)', '')
+            stdout = stdout.replace('(vim.vm.SnapshotInfo)', '')
+            stdout = stdout.replace('(vim.vm.SnapshotTree)', '')
+            stdout = stdout.replace('Listsummary:', '')
+            stdout = stdout.replace('(vim.vm.Summary)', '')
+            stdout = stdout.replace('(vim.vm.RuntimeInfo)', '')
+            stdout = stdout.replace('(vim.vm.DeviceRuntimeInfo)', '')
+            stdout = stdout.replace('(vim.vm.DeviceRuntimeInfo.VirtualEthernetCardRuntimeState)', '')
+            stdout = stdout.replace('(vim.vm.RuntimeInfo.DasProtectionState)', '')
+            stdout = stdout.replace('(vim.vm.QuestionInfo)', '')
+            stdout = stdout.replace('(vim.vm.FeatureRequirement)', '')
+            stdout = stdout.replace('(vim.vm.Summary.GuestSummary)', '')
+            stdout = stdout.replace('(vim.vm.Summary.ConfigSummary)', '')
+            stdout = stdout.replace('(vim.vApp.ProductInfo)', '')
+            stdout = stdout.replace('(vim.vm.FaultToleranceConfigInfo)', '')
+            stdout = stdout.replace('(vim.ext.ManagedByInfo)', '')
+            stdout = stdout.replace('(vim.vm.Summary.StorageSummary)', '')
+            stdout = stdout.replace('(vim.vm.Summary.QuickStats)', '')
+            if '(vim.vm.FileLayout)' in stdout:
+                parts = stdout.split('(vim.vm.FileLayout)')
+                stdout = parts[1]
+            # stdout = stdout.replace('(vim.vm.FileInfo)', '')
+            # stdout = stdout.replace('(vim.vm.FileLayout)', '')
+            stdout = stdout.replace('(vim.vm.FileLayout.DiskLayout)', '')
+        reply = ''
+        lines = stdout.split('\n')
+        for line in lines:
+            l = line.strip()
+            if l:
+                parts = l.split('=')
+                if len(parts) > 1:
+                    reply = reply + '"' + parts[0].strip() + '": ' + ('='.join(parts[1:]).replace('\'', '"').strip())
+                else:
+                    reply = reply + l
+        reply = reply.strip().replace(',}', '}')
+        if not reply:
+            return {}
+        try:
+            ret_val = json.loads(reply)
+        except Exception as err:
+            reply = str(err) + '\n' + reply
+            self.module.fail_json(changed=False, msg=reply)
+        if not_fault:
+            return ret_val
+        self.module.fail_json(changed=False, msg=ret_val['msg'])
 
     def _esxi_command(self, cmd, error_msg):
         rc, stdout, stderr = self.module.run_command(cmd, use_unsafe_shell=True)
@@ -330,6 +475,8 @@ class ESXi:
             vm_object['guestos'] = guestos
             vm_object['version'] = version
             vm_object['annotation'] = annotation
+            vm_object['path'] = '/vmfs/volumes/' + datastore + '/' + vmxfile.split('/')[0]
+
         if vm_object:
             vm_list.append(vm_object)
         return vm_list
@@ -362,9 +509,12 @@ def main():
             'ubuntu-64', # Ubuntu Linux (64-bit) 5.5.0
             'windows8srv-64' # Microsoft Windows Server 2008,2012 (64-bit)
         ]),
-        vm_scsi_type=dict(require=False, type='str', choices=['buslogic', 'lsilogic', 'pvscsi']),
+        vm_scsi_type=dict(required=False, type='str', choices=['buslogic', 'lsilogic', 'pvscsi']),
         vm_iso_image=dict(required=False, type='str'),
-        vm_iso_image2=dict(required=False, type='str')
+        vm_iso_image2=dict(required=False, type='str'),
+        snapshot=dict(required=False, type='str'),
+        vmdk_src=dict(required=False, type='str'),
+        vmdk_dest=dict(required=False, type='str')
         ),
         supports_check_mode=False,
         # required_together=[['vm_networks', 'vm_hdd_size',
@@ -382,12 +532,29 @@ def main():
     if esxi_inst.action == 'get_all':
          esxi_inst.get_all_vms()
     
+    if esxi_inst.action == 'disk_clone':
+        if esxi_inst.vmdk_src is None or esxi_inst.vmdk_dest is None:
+            module.fail_json(changed=False, msg="Error, vmdk_src and vmdk_dest are required")
+        esxi_inst.vmdk_clone(esxi_inst.vmdk_src, esxi_inst.vmdk_dest)
+
     # These methods require vm_name
     if esxi_inst.vm_name is None:
         module.fail_json(changed=False, msg="Error, vm_name is required")
 
     if esxi_inst.action == 'get':
         esxi_inst.get_vm(esxi_inst.vm_name)
+
+    if esxi_inst.action == 'get_summary':
+        esxi_inst.get_vm_summary(esxi_inst.vm_name)
+
+    if esxi_inst.action == 'get_snapshots':
+        esxi_inst.get_vm_snapshots(esxi_inst.vm_name)
+    
+    if esxi_inst.action == 'snapshot':
+        esxi_inst.vm_snapshot_create(esxi_inst.vm_name, esxi_inst.snapshot)
+    
+    if esxi_inst.action == 'removeall':
+        esxi_inst.vm_snapshot_removeall(esxi_inst.vm_name)
 
     if esxi_inst.action == 'poweron':
         esxi_inst.set_state(esxi_inst.vm_name, 'poweredOn')
