@@ -12,4 +12,4 @@ Useful scripts for ISAM
 * cleanup_oauth20_token_cache.sql - Procedure to cleanup the OAUTH20_TOKEN_CACHE table.
 * cleanup_oauth20_token_extra_attribute.sql - Procedure to cleanup the OAUTH20_TOKEN_EXTRA_ATTRIBUTE table.
 * cleanup_rba_device.sql - Procedure to cleanup the RBA_DEVICE table.
-* cleanup_rba_user_attr_session.sql - Procedure to cleaniup the RBA_USER_ATTR_SESSION table.
+* cleanup_rba_user_attr_session.sql - Procedure to cleanup the RBA_USER_ATTR_SESSION table.
