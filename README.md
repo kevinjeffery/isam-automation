@@ -19,6 +19,11 @@ Ansible module for creating and controlling VMs on Stand-Alone ESXI.
 
 [Ansible ESXi Module](https://techlink.microknight.com/2019/11/19/ansible-esxi-module/)
 
+## HVDB Cleanup
+Cleanup scripts and procedures for the ISAM External HVDB Database on DB2.
+
+[ISAM HVDB Cleanup](https://techlink.microknight.com/2020/08/29/isam-hvdb-cleanup/)
+
 ## License
 
 The contents of this repository are open-source under the Apache 2.0 licence.
