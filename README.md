@@ -4,8 +4,8 @@ Ansible automation for IBM Security Access Manager
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ## Sample Inventory and Playbooks for building and automating ISAM
 * [Sample Ansible Control server on CentOS 7](#ansible-control-server)
-* Playbook to install ISDS and dependencies (GSKit, JavaSDK, DB2)
-* Playbook to configure the ISAM ISDS instance
+* [Playbook to install ISDS and dependencies (GSKit, JavaSDK, DB2)](#isam-middleware-installation)
+* Playbook to configure the ISAM DB2 an ISDS instance
 * Playbook to build ISAM Virtual Appliances on a stand-alone ESXi host
 * [Ansible module to manage VMs on a stand-alone ESXi host](#esxi-module)
 
@@ -13,6 +13,11 @@ Ansible automation for IBM Security Access Manager
 The inventory and playbooks to support building an Ansible control server on an existing CentOS 7 server and install packages and roles required for the IBM Security Python Library and Ansible Roles.
 
 [Ansible Control Server](https://techlink.microknight.com/2019/06/23/ansible-control-system-for-isam/)
+
+## ISAM Middleware Installation
+Inventory and playbook samples to install ISAM Middleware
+
+[Datatier Software Installation](https://techlink.microknight.com/2019/12/16/data-tier-software-installation/)
 
 ## ESXi Module
 Ansible module for creating and controlling VMs on Stand-Alone ESXI.
