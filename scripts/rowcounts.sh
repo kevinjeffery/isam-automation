@@ -1,7 +1,7 @@
 #!/bin/ksh
 #
 # **************************************************************************
-VERSION="rowcounts.sh - v1.05_2020-AUG-26"
+VERSION="rowcounts.sh - v1.05_2020-AUG-27"
 # * 
 # * Kevin Jeffery
 # *
@@ -26,8 +26,8 @@ function usage {
   echo "*** Usage: ${0} -s (schema_name)"
   echo "*"
   echo "*   -s Schema name of the HVDB user tables."
-  echo "*   -t Attribute Collection Session timeout in seconds (attributeCollection.sessionTimeout)"
-  echo "*   -d Device registration inactive expiration time in days (deviceRegistration.inactiveExpirationTime)"
+  echo "*   -t Attribute Collection Session timeout in seconds (attributeCollection.sessionTimeout Default: 1800)"
+  echo "*   -d Device registration inactive expiration time in days (deviceRegistration.inactiveExpirationTime Default: 100)"
   case $1 in
    s) echo -e "*   Schema name missing\n"
       ;;
