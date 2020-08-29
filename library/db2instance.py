@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# library/db2instance.py
+# @version v2.02_2020-MAR-26
 
 import sys
 import os
@@ -98,8 +100,9 @@ class DB2Instance:
     self.module.debug(cmd)
     if not "db2_dbm_cfg" in self.facts:
       self._get_dbm_cfg_items()
-    if self._check_cfg("db2_dbm_cfg", name, value):
-      self.module.exit_json(changed=False, msg=cmd + " OK")
+    if self._check_cfg("db2_dbm_cfg", name.upper(), value):
+      # name always in uppercase for comparison
+       self.module.exit_json(changed=False, msg=cmd + " OK")
     rc, stdout, stderr = self._db2_command(cmd, cmd + " Failed")
     self.module.exit_json(changed=True, msg=cmd + " Success", rc=rc, stdout=stdout, stderr=stderr)
 
@@ -111,7 +114,7 @@ class DB2Instance:
     if self._check_cfg("db2set",name,value):
       self.module.exit_json(changed=False, msg=cmd + " OK")
     rc, stdout, stderr = self._db2_command(cmd, cmd + " Failed")
-    rc, stdout, stderr = self.module.exit_json(changed=True, msg=cmd + " Success", rc=rc, stdout=stdout, stderr=stderr)
+    rc, stdout, stderr = self.module.exit_json(change=True, msg=cmd + " Success", rc=rc, stdout=stdout, stderr=stderr)
 
   def _check_cfg(self, fact_name, item_name, item_value=None):
     if fact_name in self.facts:

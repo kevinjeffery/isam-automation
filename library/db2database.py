@@ -1,4 +1,7 @@
 #!/usr/bin/python
+# library/db2database.py
+# @version 2.00_2020-MAR-26
+# @author Kevin Jeffery
 
 import sys
 import os
@@ -25,7 +28,7 @@ class DB2Database:
     self.module.debug("*** Get DB CFG: {0}".format(self.dbname))
     if not self._created(): 
       self.module.fail_json(changed=False, msg="Database {0} does not exist.".format(self.dbname))
-    config_items = self._get_db_cfg_items(self.dbname)
+    config_items = self._get_db_cfg_items()
     lineout = "Items {0}".format(len(config_items))
     self.module.exit_json(changed=False, msg="DB Config: " + lineout, ansible_facts=self.facts)
 
@@ -64,7 +67,8 @@ class DB2Database:
     self.module.debug(cmd)
     if not self.dbname + "_cfg" in self.facts:
       self._get_db_cfg_items()
-    if self._check_cfg(self.dbname + "_cfg", name, value):
+    if self._check_cfg(self.dbname + "_cfg", name.upper(), value):
+      # name always in uppercase for comparison
       self.module.exit_json(changed=False, msg=cmd + " OK")
     rc, stdout, stderr = self._db2_command(self.cmd_connect + cmd + self.cmd_terminate, cmd + " Failed")
     self.module.exit_json(changed=True, msg=cmd + " Success", rc=rc, stdout=stdout, stderr=stderr)
@@ -99,8 +103,8 @@ class DB2Database:
       options += " pagesize {0}".format(db_pagesize)
     if db_restrictive:
       options += " restrictive"
-#    if db_comment:
-#      options += " with '{0}'".format(db_comment)
+    if db_comment:
+      options += " with '{0}'".format(db_comment)
     rc, stdout, stderr = self._db2_command(create_cmd + options, "Failed to create database {0}".format(self.dbname))
     self.module.exit_json(changed=True, msg="Database {0} created".format(self.dbname), rc=rc, stdout=stdout, stderr=stderr)
 
@@ -203,15 +207,15 @@ class DB2Database:
     return ret_value
 
   def _db2_command(self, db2_cmd, error_msg):
-    cmd = (". %s; " + db2_cmd) % self.db2profile
+    cmd = ". {0}; ".format(self.db2profile) + db2_cmd 
     rc, stdout, stderr = self.module.run_command(cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)
     if stderr != '' or rc!=0:
       self.module.fail_json(changed=False, msg=error_msg, stderr=stderr, rc=rc, stdout=stdout)
     return rc, stdout, stderr
     
   def _get_db_cfg_items(self):
-    cmd = "db2 get db cfg".format(self.dbname)
-    rc, stdout, stderr = self._db2_command(self.cmd_connect + cmd + self.cmd_terminate, "Error, could not get DB config")
+    cmd = "db2 get db cfg"
+    stdout = self._db2_command(self.cmd_connect + cmd + self.cmd_terminate, "Error, could not get DB config")[1]
     config_items = []
     config_info=stdout.split('\n')
     for config_line in config_info:
@@ -223,8 +227,8 @@ class DB2Database:
     return config_items
 
   def _get_db_bp_items(self):
-    cmd = "db2 select bpname,pagesize from syscat.bufferpools |grep -e \"^BPNAME\" -e \"^-\" -e \"selected.$\" -v".format(self.dbname)
-    rc, stdout, stderr = self._db2_command(self.cmd_connect + cmd + self.cmd_terminate, "Error, could not get DB Bufferpools")
+    cmd = "db2 select bpname,pagesize from syscat.bufferpools |grep -e \"^BPNAME\" -e \"^-\" -e \"selected.$\" -v"
+    stdout = self._db2_command(self.cmd_connect + cmd + self.cmd_terminate, "Error, could not get DB Bufferpools")[1]
     config_items = []
     config_info=stdout.split('\n')
     for config_line in config_info:
@@ -243,7 +247,7 @@ class DB2Database:
 
   def _get_db_ts_items(self):
     cmd = "db2 list tablespaces"
-    rc, stdout, stderr = self._db2_command(self.cmd_connect + cmd + self.cmd_terminate,"Error, could not get DB Tablespaces")
+    stdout = self._db2_command(self.cmd_connect + cmd + self.cmd_terminate,"Error, could not get DB Tablespaces")[1]
     config_items = []
     config_item = None
     config_info=stdout.split('\n')
@@ -270,7 +274,7 @@ class DB2Database:
 
   def _created(self):
     cmd = "db2 list db directory | grep \"Database name\" | awk '{print $4}'"
-    rc, stdout, stderr = self._db2_command(cmd, "Error, Could not get database directory")
+    stdout = self._db2_command(cmd, "Error, Could not get database directory")[1]
     for db in stdout.strip().split('\n'):
       if db == self.dbname.upper():
         return True
@@ -357,6 +361,7 @@ def main():
         territory = None
         collate = None
         comment = None
+        restrictive = None
         for key, value in module.params['db2api'].iteritems():
           if key == "path":
             path = value
