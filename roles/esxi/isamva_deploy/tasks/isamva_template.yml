@@ -1,0 +1,68 @@
+---
+# roles/esxi/isamva_prepare/tasks/isamva_template.yml
+# @version v1.01_2019-NOV-17
+# @author Kevin Jeffery
+
+- name: ISAMVA Templates **** {{ item.vm_name }}
+  debug:
+    var: item.host_name
+
+- name: Create Autoconfig directory
+  file:
+    path: "{{ inventory_dir }}/isamva/{{ item.vm_name }}/iso"
+    state: "directory"
+  delegate_to: localhost
+
+- name: Template the Autoconfig metadata
+  vars:
+    host_name: "{{ item.host_name }}"
+    ip_address: "{{ hostvars[item.host_name]['ip_address'] }}"
+    ip_netmask: "{{ hostvars[item.host_name]['ip_netmask'] }}"
+    ip_gateway: "{{ hostvars[item.host_name]['ip_gateway'] }}"
+  template:
+    src: "../templates/app-metadata.j2"
+    dest: "{{ inventory_dir }}/isamva/{{ item.vm_name }}/iso/app-metadata"
+  register: ret_metadata
+  delegate_to: localhost
+  
+- name: Remove existing Autoconfig ISO
+  file:
+    path: "{{ inventory_dir }}/isamva/{{ item.vm_name }}/{{ item.host_name }}.iso"
+    state: "absent"
+  when: ret_metadata.changed
+  ignore_errors: true
+  delegate_to: localhost
+
+- name: Create the Autoconfig ISO
+  command: "genisoimage -J -r -o {{ inventory_dir }}/isamva/{{ item.vm_name }}/{{ item.host_name }}.iso {{ inventory_dir }}/isamva/{{ item.vm_name }}/iso"
+  args:
+    creates: "{{ inventory_dir }}/isamva/{{ item.vm_name }}/{{ item.host_name }}.iso"
+  register: ret_autoconfig
+  delegate_to: localhost
+
+- name: Check the ISAM ISO image
+  vsphere_file:
+    hostname: '{{ inventory_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    datacenter: "{{ vcenter_datacenter }}"
+    datastore: "{{ vmware_iso_datastore }}"
+    path: "{{ vmware_iso_path }}/{{ item.host_name }}.iso"
+    state: "touch"
+    validate_certs: no
+  register: ret_iso
+  delegate_to: localhost
+
+- name: Deploy the Autoconfig ISO
+  vsphere_copy:
+    hostname: '{{ inventory_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    src: "{{ inventory_dir }}/isamva/{{ item.vm_name }}/{{ item.host_name }}.iso"
+    datacenter: "{{ vcenter_datacenter }}"
+    datastore: "{{ vmware_iso_datastore }}"
+    path: "{{ vmware_iso_path }}/{{ item.host_name }}.iso"
+    validate_certs: no
+  when: ret_iso.changed
+  ignore_errors: true
+  delegate_to: localhost

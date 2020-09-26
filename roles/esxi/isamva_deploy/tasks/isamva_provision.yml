@@ -1,0 +1,35 @@
+---
+# roles/esxi/isamva_provision/tasks/isamva_provision.yml
+# @version v1.01_2019-DEC-04
+# @author Kevin Jeffery
+
+- name: ISAMVA Provision **** {{item.vm_name}}
+  debug:
+    var: item.host_name
+
+- name: Create the ISAMVA
+  esxi:
+    action: "create"
+    vm_name: "{{ item.vm_name }}"
+    vm_datastore: "{{ item.datastore }}"
+    vm_resource_pool: "{{ item.resource_pool | default(omit) }}"
+    vm_guest_os: "{{ item.guest_os | default('other26xlinux-64') }}"
+    vm_mem_size: "{{ item.mem_size | default(4096) }}"
+    vm_cpu_count: "{{ item.cpu_count | default(1) }}"
+    vm_scsi_type: "lsilogic"
+    vm_hdd_size: "{{ item.hdd_size | default(40) }}"
+    vm_networks: "{{ item.networks }}"
+    vm_iso_image: "/vmfs/volumes/{{ vmware_iso_datastore }}/{{ vmware_iso_path }}/{{ isamva_iso }}"
+  register: vm_create
+
+- name: Start the VM
+  esxi:
+    action: "poweron"
+    vm_name: "{{ item.vm_name }}"
+  when: vm_create.changed
+
+- name: Set Delay Flag
+  set_fact:
+    delay_required: yes
+  when: vm_create.changed
+  

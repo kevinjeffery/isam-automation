@@ -1,0 +1,10 @@
+---
+# roles/esxi/isamva_deploy/defaults/main.yml
+# @version 1.00_2019-NOV-17
+# @author Kevin Jeffery
+
+vcenter_username: "{{ ansible_user }}"
+vcenter_password: "{{ ansible_ssh_pass }}"
+vcenter_datacenter: "ha-datacenter"
+vmware_iso_datastore: "datastore1"
+centos7_iso: "isam_9.0.4.0_20171201-2325.iso"

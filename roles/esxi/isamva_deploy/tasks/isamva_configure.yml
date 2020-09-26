@@ -1,0 +1,23 @@
+---
+# roles/esxi/isamva_deploy/tasks/isamva_configure.yml
+# @version v1.00_2019-NOV-17
+# @author Kevin Jeffery
+
+- name: ISAMVA Configure **** {{item.vm_name}}
+  debug:
+    var: item.host_name
+
+- name: Swap to autoconfigure
+  esxi:
+    action: "set"
+    vm_name: "{{ item.vm_name }}"
+    vm_datastore: "{{ item.datastore }}"
+    vm_iso_image: "/vmfs/volumes/{{ vmware_iso_datastore }}/{{ vmware_iso_path }}/{{ item.host_name }}.iso"
+  register: ret_val
+
+- name: Start the VM
+  esxi:
+    action: "poweron"
+    vm_name: "{{ item.vm_name }}"
+  register: ret_start
+  when: ret_val.changed

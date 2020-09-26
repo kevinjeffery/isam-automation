@@ -1,0 +1,41 @@
+---
+# roles/esxi/centos7_build/tasks/main.yml
+# @version v1.01_2019-DEC-07
+# @author Kevin Jeffery
+
+- name: Check if the Centos7 ISO image exists
+  vsphere_file:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username | default(hostvars[vcenter_hostname]['vcenter_username']) }}"
+    password: "{{ vcenter_password | default(hostvars[vcenter_hostanme]['vcenter_password']) }}"
+    datacenter: "{{ vcenter_datacenter | default(hostvars[vcenter_hostname]['vcenter_datacenter']) }}"
+    datastore: "{{ vmware_iso_datastore | default(hostvars[vcenter_hostname]['vcenter_iso_datastore']) }}"
+    path: "{{ vmware_iso_path | default(hostvars[vcenter_hostname]['vmwware_iso_path']) }}/{{ centos7_iso }}"
+    state: "touch"
+    validate_certs: no
+  register: ret_iso
+  delegate_to: localhost
+
+- name: Deploy the CentOS7 ISO image
+  vsphere_copy:
+    hostname: '{{ vcenter_hostname }}'
+    username: "{{ vcenter_username | default(hostvars[vcenter_hostname]['vcenter_username']) }}"
+    password: "{{ vcenter_password | default(hostvars[vcenter_hostanme]['vcenter_password']) }}"
+    datacenter: "{{ vcenter_datacenter | default(hostvars[vcenter_hostname]['vcenter_datacenter']) }}"
+    datastore: "{{ vmware_iso_datastore | default(hostvars[vcenter_hostname]['vcenter_iso_datastore']) }}"
+    path: "{{ vmware_iso_path | default(hostvars[vcenter_hostname]['vmwware_iso_path']) }}/{{ centos7_iso }}"
+    src: "{{ software_src_dir }}/{{ centos7_iso }}"
+    validate_certs: no
+  when: ret_iso.changed
+  delegate_to: localhost
+
+- name: Build CentOS7 Kickstart ISO images
+  include_tasks: centos7_template.yml
+  loop: "{{ centos7_list }}"
+  when: centos7_list is defined
+
+- name: Provision CentOS7 VMs
+  include_tasks: centos7_provision.yml
+  loop: "{{ centos7_list }}"
+  when: centos7_list is defined
+

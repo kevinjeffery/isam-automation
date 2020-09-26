@@ -1,0 +1,53 @@
+---
+# roles/esxi/isamva_deploy/tasks/main.yml
+# @version v1.00_2019-NOV-17
+# @author Kevin Jeffery
+
+- name: Check if the ISAM ISO image exists
+  vsphere_file:
+    hostname: '{{ inventory_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    datacenter: "{{ vcenter_datacenter }}"
+    datastore: "{{vmware_iso_datastore}}"
+    path: "{{vmware_iso_path}}/{{isamva_iso}}"
+    state: "touch"
+    validate_certs: no
+  register: ret_iso
+  delegate_to: localhost
+
+- name: Deploy the ISAM ISO image
+  vsphere_copy:
+    hostname: '{{ inventory_hostname }}'
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    src: "{{software_src_dir}}/{{isamva_iso}}"
+    datacenter: "{{vcenter_datacenter}}"
+    datastore: "{{vmware_iso_datastore}}"
+    path: "{{vmware_iso_path}}/{{isamva_iso}}"
+    validate_certs: no
+  when: ret_iso.changed
+  delegate_to: localhost
+
+- name: Build ISAM VA Templates and Autoconfigure ISO images
+  include_tasks: isamva_template.yml
+  loop: "{{isamva_list}}"
+  when: isamva_list is defined
+
+- set_fact:
+    delay_required: no
+
+- name: Create the ISAMVA VMs
+  include_tasks: isamva_provision.yml
+  loop: "{{ isamva_list }}"
+  when: isamva_list is defined
+
+- name: Delay 3 minutes for firmware install
+  pause:
+    minutes: 3
+  when: delay_required | bool
+
+- name: Configure the ISAMVA VMs
+  include_tasks: isamva_configure.yml
+  loop: "{{ isamva_list }}"
+  when: isamva_list is defined
