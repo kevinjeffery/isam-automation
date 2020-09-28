@@ -1,4 +1,7 @@
 #!/usr/bin/python
+# library/tdsinstance.py
+# @version v2.01_2020-SEP-27
+# @author Kevin Jeffery
 
 import sys
 import os
@@ -29,7 +32,6 @@ class TDSInstance:
     inst_name = self.instance
     if os.path.exists(self.tdshome) is False:
       self.module.fail_json(changed=False, msg="tdshome doesn't exist")
-    ret_value = {}
     idata = self._get_instance_data()
     self.tdsfacts['instances'] = idata
     self.tdsfacts[inst_name] = {}
@@ -76,7 +78,9 @@ class TDSInstance:
       idsicrt_options += " -a " + str(self.tdsapi['admin_port'])
     else:
       idsicrt_options += " -a 3538"
-    if 'admin_ssl_port' in idsicrt_options:
+    if 'admin_sslport' in self.tdsapi:
+      idsicrt_options += " -c " + str(self.tdsapi['admin_sslport'])
+    elif 'admin_ssl_port' in self.tdsapi:
       idsicrt_options += " -c " + str(self.tdsapi['admin_ssl_port'])
     else:
       idsicrt_options += " -c 3539"
@@ -118,6 +122,25 @@ class TDSInstance:
     rc, stdout, stderr = self._sbin_command(cmd, "Failed to configure database", ignore_stderr=True)
     self.module.exit_json(changed=True, rc=rc, stdout=stdout, stderr=stderr)
 
+  def idsucfgdb(self):
+    inst_name = self.instance
+    self.module.debug("*** Unconfigure TDS Database {0}".format(inst_name))
+    if self.tdsapi is None:
+      self.module.fail_json(changed=False, msg="tdsapi parameters are required")
+    location = self._get_config_value('cn=Directory, cn=RDBM Backends, cn=IBM Directory, cn=Schemas, cn=Configuration', 'ibm-slapdDbLocation')
+    idsucfgdb_options = " -I -r " + inst_name
+    db_dir = location + "/" + inst_name + "/NODE0000"
+    if not os.path.exists(db_dir):
+      self.module.exit_json(changed=False, msg="Database is not configured")
+    if 'delete_backup' in self.tdsapi: # default is delete backup
+      if bool(self.tdsapi['delete_backup']):
+        idsucfgdb_options += " -s "
+    else:
+      idsucfgdb_options += " -s "
+    cmd  = "idsucfgdb" + idsucfgdb_options + " -n -q"
+    rc, stdout, stderr = self._sbin_command(cmd, "Failed to unconfigure database", ignore_stderr=True)
+    self.module.exit_json(changed=True, rc=rc, stdout=stdout, stderr=stderr)
+
   def idsdnpw(self):
     inst_name = self.instance
     self.module.debug("*** Set Admin DN Instance {0}".format(inst_name))
@@ -140,7 +163,7 @@ class TDSInstance:
 
   def idscfgsuf(self):
     inst_name = self.instance
-    self.module.debug("*** Set Admin DN Instance {0}".format(inst_name))
+    self.module.debug("*** Set Suffix Instance {0}".format(inst_name))
     idscfgsuf_options = " -I " + inst_name
     if self.tdsapi is None:
       self.module.fail_json(changed=False, msg="tdsapi parameters are required")
@@ -195,7 +218,7 @@ class TDSInstance:
     inst_name = self.instance
     self.module.debug("*** Start admin instance {0}".format(inst_name))
     if not self._admin_up():
-      rc, stdout, stderr = self._sbin_command(self.cmd_adminstart, "Error, could not start {0} admin instance}".format(inst_name), ignore_stderr=True)
+      rc, stdout, stderr = self._sbin_command(self.cmd_adminstart, "Error, could not start {0} admin instance".format(inst_name), ignore_stderr=True)
       self.module.exit_json(changed=True, msg="Admin instance {0} started".format(self.instance),stderr=stderr, rc=rc, stdout=stdout)
     else:
       self.module.exit_json(changed=False, msg="Admin instance {0} running".format(inst_name))
@@ -308,8 +331,6 @@ class TDSInstance:
     data : list of entries containing list of attribute data {'name':attrname, 'value':attrvalue}
     """
     data = []
-    linecount = 0
-    entrycount = 0
     with open(filepath, 'rt') as file:
       # Read the first line
       line = file.readline()
@@ -343,27 +364,26 @@ class TDSInstance:
     rc, stdout, stderr = self.module.run_command(sbin + cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)
     if ignore_stderr:
       stderr = ''
-    if stderr != '' or rc!=0:
+    if stderr != '' or rc != 0:
       self.module.fail_json(changed=False, msg=error_msg, stderr=stderr, rc=rc, stdout=stdout)
     return rc, stdout, stderr
 
   def _run_command(self, cmd, error_msg, ignore_stderr=False):
-    sbin = self.tdshome + "/sbin/"
     rc, stdout, stderr = self.module.run_command(cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)
     if ignore_stderr:
       stderr = ''
-    if stderr != '' or rc!=0:
+    if stderr != '' or rc != 0:
       self.module.fail_json(changed=False, msg=error_msg, stderr=stderr, rc=rc, stdout=stdout)
     return rc, stdout, stderr
 
   def _instance_up(self):
     cmd = "ps -u {0} | grep -q ibmslapd".format(self.instance)
-    rc, stdout, stderr = self.module.run_command(cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)
+    rc = self.module.run_command(cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)[0]
     return rc == 0
 
   def _admin_up(self):
     cmd = "ps -u {0} | grep -q ibmdiradm".format(self.instance)
-    rc, stdout, stderr = self.module.run_command(cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)
+    rc = self.module.run_command(cmd, executable="/usr/bin/ksh", use_unsafe_shell=True)[0]
     return rc == 0
 
   def set_config(self, attribute):
@@ -388,20 +408,21 @@ class TDSInstance:
     self.module.fail_json(changed=False, msg=str(attribute))
 
   def _has_config_value(self, entry_dn, attr_name, attr_value):
-    inst_name = self.instance
-    ret_value = False
-    if entry_dn in self.tdsfacts[inst_name]['config_data']:
-      if attr_name in self.tdsfacts[inst_name]['config_data'][entry_dn]:
-        attr_values = self.tdsfacts[inst_name]['config_data'][entry_dn][attr_name]
-        if isinstance(attr_values, list):
-          for value in attr_values:
-            if value.lower() == attr_value.lower():
-              ret_value = True
-              break
-        else:
-          if attr_values.lower() == attr_value.lower():
-            ret_value = True
-    return ret_value
+    attr_values = self._get_config_value(entry_dn, attr_name)
+    if isinstance(attr_values, list):
+      for value in attr_values:
+        if value.lower() == attr_value.lower():
+          return True
+    else:
+      if attr_values.lower() == attr_value.lower():
+        return True
+    return False
+
+  def _get_config_value(self, entry_dn, attr_name):
+    if entry_dn in self.tdsfacts[self.instance]['config_data']:
+      if attr_name in self.tdsfacts[self.instance]['config_data'][entry_dn]:
+        return self.tdsfacts[self.instance]['config_data'][entry_dn][attr_name]
+    return ''
 
 def main():
     module = AnsibleModule(
