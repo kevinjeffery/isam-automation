@@ -1,7 +1,7 @@
 #!/bin/ksh
 #
 # **************************************************************************
-VERSION="rowcounts.sh - v1.05_2020-AUG-27"
+VERSION="rowcounts.sh - v1.06_2020-SEP-27"
 # * 
 # * Kevin Jeffery
 # *
@@ -68,7 +68,7 @@ db2 "select count(*) as EXPIRED from ${schema_name}.AUTH_TXN_OBL_DATA where REC_
 
 echo "*** ${schema_name}.RBA_DEVICE"
 db2 "select count(*) as ROWCOUNT from ${schema_name}.RBA_DEVICE"
-db2 "select count(*) as EXPIRED from ${schema_name}.RBA_DEVICE where  timestampdiff(16, char(CURRENT TIMESTAMP - LAST_USED_TIME)) > ${INACTIVE_EXPIRATION_TIME}"
+db2 "select count(*) as EXPIRED from ${schema_name}.RBA_DEVICE where LAST_USED_TIME < (CURRENT TIMESTAMP - ${INACTIVE_EXPIRATION_TIME} DAYS"
 
 echo "*** ${schema_name}.RBA_USER_ATTR_SESSION"
 db2 "select count(*) as ROWCOUNT from ${schema_name}.RBA_USER_ATTR_SESSION"
