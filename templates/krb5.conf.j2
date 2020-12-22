@@ -1,0 +1,8 @@
+[realms]
+ {{ winrm_kerberos_config.domain | upper }} = {
+{% for kdc in winrm_kerberos_config.kdc %}
+  kdc = {{ kdc }}
+{% endfor %}
+ }
+[domain_realm]
+ .{{ winrm_kerberos_config.domain }} = {{ winrm_kerberos_config.domain | upper }}
