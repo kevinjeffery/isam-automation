@@ -1,0 +1,25 @@
+---
+# playbooks/winrm_kerberos.yml
+# @version v1.01_2020-DEC-22
+# @author Kevin Jeffery
+
+- name: Configure WinRM Kerberos
+  hosts: localhost
+  tasks:
+  - name: Start
+    debug:
+      msg: "{{ ansible_date_time.date }} {{ ansible_date_time.time }}"
+  
+  - name: Configure [libdefaults] - Disable RDNS
+    lineinfile:
+      path: /etc/krb5.conf
+      line: " rdns = false"
+      regex: "^.*rdns ="
+    become: yes
+
+  - name: Template the configuration file
+    template:
+      src: ../templates/krb5.conf.j2
+      dest: "/etc/krb5.conf.d/{{ winrm_kerberos_config.domain | regex_replace('\\.', '_' ) }}.conf"
+    when: winrm_kerberos_config.domain is defined
+    become: yes

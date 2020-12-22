@@ -1,6 +1,6 @@
 ---
 # inventory/sample.yml
-# @version 1.04_2019-DEC-04
+# @version 1.05_2020-DEC-22
 # @author Kevin Jeffery
 
 all:
@@ -68,6 +68,15 @@ all:
       ip_address: "192.168.42.201"
       ip_gateway: "192.168.42.2"
       ip_netmask: "255.255.255.0"
+    dc1.sample.com:
+      host_name: "dc1.sample.com"
+      ip_address: "192.168.42.161"
+    dc2.sample.com:
+      host_name: "dc2.sample.com"
+      ip_address: "192.168.42.162"
+    win160.sample.com:
+      host_name: "win160.sample.com"
+      ip_address: "192.168.42.160"
   children:
     isamva:
       hosts:
@@ -120,10 +129,31 @@ all:
     isamldap_servers:
       hosts:
         datatier.sample.com:
-
-  vars:
+    msad:
+      hosts:
+        dc1.sample.com:
+        dc2.sample.com:
+        win2016.sample.com:
+      vars:
+        ansible_user: "ansible@SAMPLE.COM"
+        ansible_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          36333433663039353938383362336235636230383361383833356436666562383235616637303531
+          3235326362623435363933623766303262373432313362380a363533613966626132353130356466
+          36666134646666613531666334636335396165626234356139666234663661366261646462333431
+          6163636461663637360a353766633534323763346665656432643334356134373335326533343661
+          3438
+        ansible_connection: "winrm"
+        ansible_port: 5985
+        ansible_winrm_transport: "kerberos"
+   vars:
     roles_path: "/ansible/roles"
     software_src_dir: "/ansible/software"
     software_dest_dir: "/appdata/software"
     db2_home: "/opt/ibm/DB2/v11.1"
     ldap_home: "/opt/ibm/ldap/V6.4"
+    winrm_kerberos_config:
+      domain: "sample.com"
+      kdc:
+      - "dc1.sample.com"
+      - "dc2.sample.com"

@@ -1,0 +1,45 @@
+---
+# playbooks/winrm_kerberos.yml
+# @version v1.00_2020-DEC-20
+# @author Kevin Jeffery
+
+- name: Install WinRM Kerberos Dependencies
+  hosts: localhost
+  tasks:
+  - name: Start
+    debug:
+      msg: "{{ ansible_date_time.date }} {{ ansible_date_time.time }}"
+  
+  - name: Install Required Packages - RedHat/CentOS
+    vars:
+      ansible_python_interpreter: /usr/bin/python2
+    yum:
+      name:
+      - gcc
+      - python-devel
+      - python3-devel
+      - krb5-devel
+      - krb5-libs
+      - krb5-workstation
+      state: latest
+      update_cache: yes
+    become: yes
+    when: (ansible_os_family == "RedHat" or ansible_os_family == "CentOS") and ansible_distribution_version is version('8.0', 'lt')
+
+  - name: Install Required Packages - Debian/Ubuntu
+    apt:
+      name:
+      - python-dev
+      - python3-dev
+      - libkrb5-dev
+      - krb5-user
+      state: latest
+      update_cache: yes
+    become: yes
+    when: ansible_os_family == "Debian"
+
+  - name: Install python winrm wrapper
+    pip:
+      name: "pywinrm[kerberos]"
+      state: latest
+    become: yes
