@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # library/esxi.py
-# @version v1.04_2020-AUG-02
+# @version v1.07_2020-DEC-06
 # @author Kevin Jeffery
 
 import sys
@@ -33,7 +33,7 @@ class ESXi:
         self.vmkfstools_delete = '/bin/vmkfstools -U /vmfs/volumes/{1}/{0}/{0}.vmdk' # vm_name vm_datastore
         self.vmkfstools_create = '/bin/vmkfstools -c {2}G /vmfs/volumes/{1}/{0}/{0}.vmdk' # vm_name vm_datastore vm_hdd_size
         self.vmkfstools_clone = '/sbin/vmkfstools -d thin -i "{0}" "{1}"' # vmdk_src vmdk_dest
-        self.esxcli = 'esxcli --formatter=keyvalue {0} {1} {2}'
+        self.esxcli = '/bin/esxcli --formatter=keyvalue {0} {1} {2}'
 
     def parse_params(self):
         self.module.debug("*** Process all Arguments")
@@ -77,7 +77,7 @@ class ESXi:
                     disk_files.append(file_spec.split('/')[1])
             ret_data['diskFiles'] = disk_files
         else:
-            self.module.fail_json(changed=False, msg="Error, VM not found")
+            self.module.fail_json(changed=False, msg="Error, VM {0} not found".format(vm_name))
         self.module.exit_json(changed=False, data=ret_data)
 
     def get_vm_summary(self, vm_name):
@@ -85,7 +85,7 @@ class ESXi:
         if ret_data:
             ret_data = self._get_vm_summary(ret_data['vmid'])
         else:
-            self.module.fail_json(changed=False, msg="Error, VM not found")
+            self.module.fail_json(changed=False, msg="Error, VM {0} not found".format(vm_name))
         self.module.exit_json(changed=False, data=ret_data)
 
     def get_vm_snapshots(self, vm_name):
@@ -93,7 +93,7 @@ class ESXi:
         if ret_data:
             ret_data = self._get_vm_snapshots(ret_data['vmid'])
         else:
-            self.module.fail_json(changed=False, msg="Error, VM not found")
+            self.module.fail_json(changed=False, msg="Error, VM {0} not found".format(vm_name))
         self.module.exit_json(changed=False, data=ret_data)
 
     def vm_snapshot_create(self, vm_name, snapshot='snapshot1'):
@@ -101,7 +101,7 @@ class ESXi:
         if ret_data:
             stdout = self._esxi_command(self.vmsvc_snapshot_create.format(ret_data['vmid'], snapshot), "Error, could not create snapshot")[1]
         else:
-            self.module.fail_json(changed=False, msg="Error, VM not found")
+            self.module.fail_json(changed=False, msg="Error, VM {0} not found".format(vm_name))
         self.module.exit_json(changed=True, stdout=stdout)
 
     def vm_snapshot_removeall(self, vm_name):
@@ -109,7 +109,7 @@ class ESXi:
         if ret_data:
             stdout = self._esxi_command(self.vmsvc_snapshot_removeall.format(ret_data['vmid']), "Error, could not remove snapshot")[1]
         else:
-            self.module.fail_json(changed=False, msg="Error, VM not found")
+            self.module.fail_json(changed=False, msg="Error, VM {0} not found".format(vm_name))
         self.module.exit_json(changed=True, stdout=stdout)
     
     def vmdk_clone(self, vmdk_src, vmdk_dest):
@@ -121,16 +121,16 @@ class ESXi:
         self.module.debug("*** Create VM {0}".format(vm_name))
         vm_info = self._search(vm_name)
         if vm_info is not None:
-            self.module.exit_json(changed=False, msg="VM exists")
+            self.module.exit_json(changed=False, msg="VM {0} exists".format(vm_name))
         # Create dummy VM
-        stdout = self._esxi_command(self.vmsvc_createdummyvm.format(vm_name, vm_datastore), "Error, createdummyvm failed: {0}".format(vm_name))[1]
+        stdout = self._esxi_command(self.vmsvc_createdummyvm.format(vm_name, vm_datastore), "Error, VM {0} createdummyvm failed".format(vm_name))[1]
         vmid = stdout.split('\n')[0]
         # unregister VM
-        self._esxi_command(self.vmsvc_unregister.format(vmid), "Error, unregistervm failed: {0}".format(vm_name))
+        self._esxi_command(self.vmsvc_unregister.format(vmid), "Error, VM {0} unregistervm failed".format(vm_name))
         # Delete the hard disk
-        self._esxi_command(self.vmkfstools_delete.format(vm_name, vm_datastore), "Error, vmkfstools delete failed: {0}".format(vm_name))
+        self._esxi_command(self.vmkfstools_delete.format(vm_name, vm_datastore), "Error, VM {0} vmkfstools delete failed".format(vm_name))
         # recreate the disk with new size
-        self._esxi_command(self.vmkfstools_create.format(vm_name, vm_datastore, vm_hdd_size), "Error, vmkfstools create failed: {0}".format(vm_name))
+        self._esxi_command(self.vmkfstools_create.format(vm_name, vm_datastore, vm_hdd_size), "Error, VM {0} vmkfstools create failed".format(vm_name))
         # process the vmx file
         self._process_vmx_file(vm_name, vm_datastore, vm_guest_os=vm_guest_os, vm_mem_size=vm_mem_size, vm_hdd_size=vm_hdd_size,
             vm_cpu_count=vm_cpu_count, vm_scsi_type=vm_scsi_type, vm_networks=vm_networks, vm_iso_image=vm_iso_image, vm_iso_image2=vm_iso_image2, vm_create=True)
@@ -141,7 +141,7 @@ class ESXi:
             cmd = self.vmsvc_solo_registervm.format(vm_name, vm_datastore, pool_id)
         else:
             cmd = self.vmsvc_solo_registervm.format(vm_name, vm_datastore, '')
-        stdout = self._esxi_command(cmd, "Error, registervm: {0} {1}".format(vm_name, pool_id))[1]
+        stdout = self._esxi_command(cmd, "Error, VM {0} registervm: {1}".format(vm_name, pool_id))[1]
         vmid = stdout.split('\n')[0]
         self.module.exit_json(changed=True, data=vmid)
 
@@ -150,9 +150,9 @@ class ESXi:
         ret_data = self._search(vm_name)
         if ret_data:
             if self._get_vm_state(ret_data['vmid']) != 'poweredOff':
-                self.module.exit_json(changed=False, warnings=['VM not poweredOff'], data=ret_data['vmid'])
+                self.module.exit_json(changed=False, warnings=['VM {0} not poweredOff'], data=ret_data['vmid'])
         else:
-            self.module.fail_json(changed=False, msg="Error, VM not found: {0}".format(vm_name))
+            self.module.fail_json(changed=False, msg="Error, VM {0} not found".format(vm_name))
         changed = self._process_vmx_file(vm_name, vm_datastore, vm_mem_size=vm_mem_size, vm_networks=vm_networks, vm_iso_image=vm_iso_image)
         self.module.exit_json(changed=changed, data=ret_data['vmid'])        
 
@@ -166,36 +166,36 @@ class ESXi:
                 if state == 'poweredOff':
                     self.module.exit_json(changed=False, msg='VM is already poweredOn', data=ret_data)
                 elif state == 'poweredOn' and new_state == 'poweredOff':
-                    self._esxi_command(self.vmsvc_power_off.format(vmid), 'Error, could not poweroff {0}'.format(vmid))
+                    self._esxi_command(self.vmsvc_power_off.format(vmid), 'Error, VM {0} could not poweroff'.format(vmid))
                     ret_data['state'] = 'poweredOff'
                     if toolsStatus == 'toolsOk':
                         ret_data['toolsStatus'] = 'toolsNotRunning'
                 elif state == 'poweredOn' and toolsStatus == 'toolsOk':
-                    self._esxi_command(self.vmsvc_power_shutdown.format(vmid), 'Error, could not shutdown {0}'.format(vmid))
+                    self._esxi_command(self.vmsvc_power_shutdown.format(vmid), 'Error, VM {0} could not shutdown'.format(vmid))
                     ret_data['state'] = 'poweredOff'
                     ret_data['toolsStatus'] = 'toolsNotRunning'
                 else:
-                    self.module.fail_json(changed=False, msg="Error, tools not running: {0} {1}".format(vmid, toolsStatus))
+                    self.module.fail_json(changed=False, msg="Error, VM {0} tools not running: {1}".format(vmid, toolsStatus))
             elif new_state == 'poweredOn':
                 if state == 'poweredOn':
-                    self.module.exit_json(changed=False, msg='VM is already poweredOn', data=ret_data)
-                self._esxi_command(self.vmsvc_power_on.format(vmid), 'Error, could not poweron {0}'.format(vmid))
+                    self.module.exit_json(changed=False, msg='VM {0} is already poweredOn'.format(vmid), data=ret_data)
+                self._esxi_command(self.vmsvc_power_on.format(vmid), 'Error, VM {0} could not poweron'.format(vmid))
             elif new_state == 'reboot':
                 if state == 'poweredOff':
-                    self.module.fail_json(changed=False, msg="Error, VM is not running: {0}".format(vmid))
+                    self.module.fail_json(changed=False, msg="Error, VM {0} is not running".format(vmid))
                 elif toolsStatus == 'toolsOk':
-                    self._esxi_command(self.vmsvc_power_reboot.format(vmid), 'Error, could not shutdown {0}'.format(vmid))
+                    self._esxi_command(self.vmsvc_power_reboot.format(vmid), 'Error, VM {0} could not shutdown'.format(vmid))
                 else:
-                    self.module.fail_json(changed=False, msg="Error, tools not running: {0} {1}".format(vmid, toolsStatus))
+                    self.module.fail_json(changed=False, msg="Error, VM {0} tools not running: {1}".format(vmid, toolsStatus))
             else:
                 self.module.fail_json(changed=False, msg='Error, invalid power state')
         else:
-            self.module.fail_json(changed=False, msg="Error, VM not found: {0}".format(vm_name))
+            self.module.fail_json(changed=False, msg="Error, VM {0} not found".format(vm_name))
         self.module.exit_json(changed=True, data=ret_data)
 
     def _get_vm_state(self, vmid):
         ret_val = "unknown"
-        stdout = self._esxi_command(self.vmsvc_power_getstate.format(vmid), "Error, cannot get state {0}".format(vmid))[1]
+        stdout = self._esxi_command(self.vmsvc_power_getstate.format(vmid), "Error, VM {0} cannot get state".format(vmid))[1]
         info_lines = stdout.split('\n')
         for info_line in info_lines:
             if re.match("Powered on", info_line):
@@ -213,7 +213,7 @@ class ESXi:
 
     def _get_tools_status(self, vmid):
         ret_val = "unknown"
-        stdout = self._esxi_command(self.vmsvc_get_summary.format(vmid) + " | grep toolsStatus", "Error, cannot get tools status: {0}".format(vmid))[1]
+        stdout = self._esxi_command(self.vmsvc_get_summary.format(vmid) + " | grep toolsStatus", "Error, VM {0} cannot get tools status".format(vmid))[1]
         if re.search(r'toolsNotRunning', stdout):
             return 'toolsNotRunning'
         if re.search(r'toolsOk', stdout):
@@ -380,6 +380,7 @@ class ESXi:
             stdout = stdout.replace('(vim.ext.ManagedByInfo)', '')
             stdout = stdout.replace('(vim.vm.Summary.StorageSummary)', '')
             stdout = stdout.replace('(vim.vm.Summary.QuickStats)', '')
+            stdout = stdout.replace('(vim.vm.FileLayout.SnapshotLayout)', '')
             if '(vim.vm.FileLayout)' in stdout:
                 parts = stdout.split('(vim.vm.FileLayout)')
                 stdout = parts[1]
