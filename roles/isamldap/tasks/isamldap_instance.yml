@@ -1,219 +1,219 @@
 ---
 # roles/isamldap/tasks/isamldap_instance.yml
-# @version 2.06_2019-07-23
+# @version 2.07_2020-DEC-23
 # @author Kevin Jeffery
 
 - name: LDAP Database Location
   file:
-    path: "{{isamldap_dblocation}}"
+    path: "{{ isamldap_dblocation }}"
     state: directory
-    owner: "{{isamldap_instance_name}}"
+    owner: "{{ isamldap_instance_name }}"
     group: idsldap
   become: "yes"
   when: isamldap_dblocation is defined
 
 - name: LDAP Database Storage
   file:
-    path: "{{isamldap_dbstorage}}"
+    path: "{{ isamldap_dbstorage }}"
     state: directory
-    owner: "{{isamldap_instance_name}}"
+    owner: "{{ isamldap_instance_name }}"
     group: idsldap
   become: "yes"
   when: isamldap_dbstorage is defined
 
-- name : LDAP Database Active Logs
+- name: LDAP Database Active Logs
   file:
-    path: "{{isamldap_dblogdir}}"
+    path: "{{ isamldap_dblogdir }}"
     state: directory
-    owner: "{{isamldap_instance_name}}"
+    owner: "{{ isamldap_instance_name }}"
     group: idsldap
   become: "yes"
   when: isamldap_dblogdir is defined
 
 - name: LDAP Database Archive Logs
   file:
-    path: "{{isamldap_dblogarch}}"
+    path: "{{ isamldap_dblogarch }}"
     state: directory
-    owner: "{{isamldap_instance_name}}"
+    owner: "{{ isamldap_instance_name }}"
     group: idsldap
   become: "yes"
   when: isamldap_dblogarch is defined
 
 - name: LDAP Database Diagnostic Logs
   file:
-    path: "{{isamldap_diagpath}}"
+    path: "{{ isamldap_diagpath }}"
     state: directory
-    owner: "{{isamldap_instance_name}}"
+    owner: "{{ isamldap_instance_name }}"
     group: "idsldap"
   become: True
   when: isamldap_diagpath is defined
 
-- name : LDAP Backup Directory
+- name: LDAP Backup Directory
   file:
-    path: "{{isamldap_backup_dir}}"
+    path: "{{ isamldap_backup_dir }}"
     state: directory
-    owner: "{{isamldap_instance_name}}"
+    owner: "{{ isamldap_instance_name }}"
     group: idsldap
   become: "yes"
   when: isamldap_backup_dir is defined
 
 - name: Create ISAM LDAP instance
   tdsinstance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: idsicrt
     tdsapi:
-      seed: "{{isamldap_instance_seed}}"
-      salt: "{{isamldap_instance_salt|default(omit) }}"
-      location: "{{isamldap_instance_home}}"
-      ip_addr: "{{isamldap_ip_addr}}"
-      port: "{{isamldap_port}}"
-      sslport: "{{isamldap_sslport}}"
-      admin_port: "{{isamldap_admin_port}}"
-      admin_ssl_port: "{{isamldap_admin_sslport}}"
+      seed: "{{ isamldap_instance_seed }}"
+      salt: "{{ isamldap_instance_salt|default(omit) }}"
+      location: "{{ isamldap_instance_home }}"
+      ip_addr: "{{ isamldap_ip_addr }}"
+      port: "{{ isamldap_port }}"
+      sslport: "{{ isamldap_sslport }}"
+      admin_port: "{{ isamldap_admin_port }}"
+      admin_ssl_port: "{{ isamldap_admin_sslport }}"
   become: "yes"
   register: debug_idsicrt
 
 - name: Configure the ISAM LDAP DB2 instance
   db2instance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: set_dbm_cfg
     db2api:
-      using: "{{cfg.using}}"
-      value: "{{cfg.value}}"
-  with_items: "{{isamldap_dbm_cfg}}"
+      using: "{{ cfg.using }}"
+      value: "{{ cfg.value }}"
+  with_items: "{{ isamldap_dbm_cfg }}"
   loop_control:
     loop_var: cfg
-    label: "using {{cfg.using}} {{cfg.value}}"
+    label: "using {{ cfg.using }} {{ cfg.value }}"
   become: True
-  become_user: "{{isamldap_instance_name}}"
+  become_user: "{{ isamldap_instance_name }}"
   register: debug_dbm_cfg
   when: debug_idsicrt.changed and isamldap_dbm_cfg is defined
 
 - name: Set Admin DN and Password
   tdsinstance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: idsdnpw
     tdsapi:
-      admin_id: "{{isamldap_admin_id}}"
-      admin_pw: "{{isamldap_admin_pwd}}"
+      admin_id: "{{ isamldap_admin_id }}"
+      admin_pw: "{{ isamldap_admin_pwd }}"
   become: "yes"
   when: debug_idsicrt.changed    
 
 - name: Deploy V3.modifiedschema
   copy:
-    src: "{{isamldap_modifiedschema}}"
-    dest: "{{isamldap_instance_home}}/idsslapd-{{isamldap_instance_name}}/etc/V3.modifiedschema"
-    owner: "{{isamldap_instance_name}}"
+    src: "{{ isamldap_modifiedschema }}"
+    dest: "{{ isamldap_instance_home }}/idsslapd-{{ isamldap_instance_name }}/etc/V3.modifiedschema"
+    owner: "{{ isamldap_instance_name }}"
     group: "idsldap"
   become: "yes"
   when: isamldap_modifiedschema is defined
 
 - name: Configure ISAM LDAP Database
   tdsinstance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: idscfgdb
     tdsapi:
-      password: "{{isamldap_instance_pwd}}"
-      dblocation: "{{isamldap_dblocation | default(omit)}}"
-      storage: "{{isamldap_dbstorage | default(omit)}}"
-      backup_dir: "{{isamldap_backup_dir | default(omit)}}"
+      password: "{{ isamldap_instance_pwd }}"
+      dblocation: "{{ isamldap_dblocation | default(omit) }}"
+      storage: "{{ isamldap_dbstorage | default(omit) }}"
+      backup_dir: "{{ isamldap_backup_dir | default(omit) }}"
   become: "yes"
 
-- name: Configure the {{isamldap_instance_name}} Database
+- name: Configure the {{ isamldap_instance_name }} Database
   db2database:
-    instance: "{{isamldap_instance_name}}"
-    dbname: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
+    dbname: "{{ isamldap_instance_name }}"
     action: "update_db_cfg"
     db2api:
-      using: "{{cfg.using}}"
-      value: "{{cfg.value}}"
-  with_items: "{{isamldap_db_cfg}}"
+      using: "{{ cfg.using }}"
+      value: "{{ cfg.value }}"
+  with_items: "{{ isamldap_db_cfg }}"
   loop_control:
     loop_var: cfg
-    label: "using {{cfg.using}} {{cfg.value}}"
+    label: "using {{ cfg.using }} {{ cfg.value }}"
   become: True
-  become_user: "{{isamldap_instance_name}}"
+  become_user: "{{ isamldap_instance_name }}"
   register: debug_db_cfg
   when: debug_idsicrt.changed
 
 - name: Restart LDAP DB2 Instance
   db2instance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: "restart"
     force: True
   become: True
-  become_user: "{{isamldap_instance_name}}"
+  become_user: "{{ isamldap_instance_name }}"
   when: debug_db_cfg.changed or (debug_dbm_cfg is defined and debug_dbm_cfg.changed)
 
 - name: Configure ISAM LDAP Suffix
   tdsinstance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: idscfgsuf
     tdsapi:
-      suffix: "{{isamldap_suffix}}"
+      suffix: "{{ isamldap_suffix }}"
   become: "yes"
   when: debug_idsicrt.changed
 
 - name: Configure ISAM SecAuthority Suffix
   tdsinstance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: idscfgsuf
     tdsapi:
-      suffix: "{{isamldap_secauthority_suffix | default('SecAuthority=Default')}}"
+      suffix: "{{ isamldap_secauthority_suffix | default('SecAuthority=Default') }}"
   become: "yes"
   when: debug_idsicrt.changed and isamldap_secauthority_legacy|bool
 
 - name: Backup LDAP Instance
   tdsinstance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: idsdbback
     tdsapi:
-      backup_dir: "{{isamldap_backup_dir}}"
-      archive_dir: "{{isamldap_dblogarch | default(omit)}}"
+      backup_dir: "{{ isamldap_backup_dir }}"
+      archive_dir: "{{ isamldap_dblogarch | default(omit) }}"
       type: "online"
   become: "yes"
-  become_user: "{{isamldap_instance_name}}"
+  become_user: "{{ isamldap_instance_name }}"
   when: debug_idsicrt.changed and isamldap_backup_dir is defined
 
-- name : LDAP Backup Config file
+- name: LDAP Backup Config file
   file:
-    path: "{{isamldap_backup_dir}}/{{isamldap_instance_name}}/BACKUP_FILES/dbback.dat"
+    path: "{{ isamldap_backup_dir }}/{{ isamldap_instance_name }}/BACKUP_FILES/dbback.dat"
     state: file
-    owner: "{{isamldap_instance_name}}"
+    owner: "{{ isamldap_instance_name }}"
     group: idsldap
   become: "yes"
   when: isamldap_backup_dir is defined
 
-- name: Update firewalld {{isamldap_port}}
+- name: Update firewalld {{ isamldap_port }}
   firewalld:
-    port: "{{isamldap_port}}/tcp"
+    port: "{{ isamldap_port }}/tcp"
     permanent: True
     state: enabled
   become: "yes"
   register: fw_ldapport
   when: isamldap_firewalld_ports is defined and isamldap_port in isamldap_firewalld_ports
 
-- name: Update firewalld {{isamldap_sslport}}
+- name: Update firewalld {{ isamldap_sslport }}
   firewalld:
-    port: "{{isamldap_sslport}}/tcp"
+    port: "{{ isamldap_sslport }}/tcp"
     permanent: True
     state: enabled
   become: "yes"
   register: fw_ldapssl
   when: isamldap_firewalld_ports is defined and isamldap_sslport in isamldap_firewalld_ports
 
-- name: Update firewalld {{isamldap_admin_port}}
+- name: Update firewalld {{ isamldap_admin_port }}
   firewalld:
-    port: "{{isamldap_admin_port}}/tcp"
+    port: "{{ isamldap_admin_port}}/tcp"
     permanent: True
     state: enabled
   become: "yes"
   register: fw_adminport
   when: isamldap_firewalld_ports is defined and isamldap_admin_port in isamldap_firewalld_ports
 
-- name: Update firewalld {{isamldap_admin_sslport}}
+- name: Update firewalld {{ isamldap_admin_sslport }}
   firewalld:
-    port: "{{isamldap_admin_sslport}}/tcp"
+    port: "{{ isamldap_admin_sslport }}/tcp"
     permanent: True
     state: enabled
   become: "yes"
@@ -227,7 +227,7 @@
 
 - name: Start the LDAP Instance
   tdsinstance:
-    instance: "{{isamldap_instance_name}}"
+    instance: "{{ isamldap_instance_name }}"
     action: start
   become: "yes"
 
@@ -235,5 +235,5 @@
   wait_for:
     delay: 15
     host: "0.0.0.0"
-    port: "{{isamldap_port}}"
+    port: "{{ isamldap_port }}"
   become: "yes"
